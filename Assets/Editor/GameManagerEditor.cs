@@ -9,7 +9,6 @@ public class GameManagerEditor : Editor
 
     public override void OnInspectorGUI()
     {
-        MoveGenerator.FillFENDict();
         GameMngr self = (GameMngr)target;
         DrawDefaultInspector();
         if (GUILayout.Button("Generate Board") && !self.boardExists)

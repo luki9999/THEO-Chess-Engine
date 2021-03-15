@@ -50,18 +50,17 @@ public class GameMngr : MonoBehaviour
         moveGenerator = new MoveGenerator();
         ChessBoard test = new ChessBoard();
         moveMade.AddListener(OnMove);
+        FENHandler.FillFENDict();
     }
 
     void Start()
     {
-        FENTest();
         boardCreation.creationFinished.AddListener(OnBoardFinished);
     }
 
     public void OnBoardFinished()
     {
         boardExists = true;
-        HighlightTest();
         StartChessGame();
         
         theo = new Engine(moveGenerator);
@@ -138,48 +137,6 @@ public class GameMngr : MonoBehaviour
         if (!cursor.activeSelf) cursor.SetActive(true);
     }
 
-    void FENTest()
-    {
-        int[] startingPos =  MoveGenerator.ReadFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-        pieceHandler.LayOutPieces(ChessBoard.ConvertArrayToBoard(startingPos));
-
-        pieceHandler.ClearBoard();
-        int[] startingPos1 = MoveGenerator.ReadFEN("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1");
-        pieceHandler.LayOutPieces(ChessBoard.ConvertArrayToBoard(startingPos1));
-
-        pieceHandler.ClearBoard();
-        int[] startingPos2 = MoveGenerator.ReadFEN("rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2");
-        pieceHandler.LayOutPieces(ChessBoard.ConvertArrayToBoard(startingPos2));
-
-        pieceHandler.ClearBoard();
-        int[] startingPos3 = MoveGenerator.ReadFEN("rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2");
-        pieceHandler.LayOutPieces(ChessBoard.ConvertArrayToBoard(startingPos3));
-
-        pieceHandler.ClearBoard();
-        int[] empty = MoveGenerator.ReadFEN("8/8/8/8/8/8/8/8 w KQkq - 0 1");
-        pieceHandler.LayOutPieces(ChessBoard.ConvertArrayToBoard(empty));
-
-        print("FEN Handling tested");
-    }
-
-    void HighlightTest()
-    {
-        for (int i = 0; i < 64; i++)
-        {
-            spaceHandler.HighlightSpace(i, Color.red);
-        }
-        spaceHandler.UnHighlightAll();
-        for (int i = 0; i < 64; i++)
-        {
-            spaceHandler.HighlightSpace(i, Color.green);
-            spaceHandler.UnHighlightSpace(i);
-            spaceHandler.HighlightSpace(i, Color.blue);
-        }
-        spaceHandler.UnHighlightAll();
-
-        print("Space highlighting tested");
-    }
-
     public void MoveGenerationTest(int piece)
     {
         switch (piece)
@@ -247,12 +204,12 @@ public class GameMngr : MonoBehaviour
         playerOnTurn = playerToMove;
         pieceHandler.ClearBoard();
         moveGenerator.LoadFEN(fen);
-        playerOnTurn = moveGenerator.playerOnTurn;
+        playerOnTurn = moveGenerator.gameData.playerOnTurn;
         pieceHandler.LayOutPieces(moveGenerator.board);
-        for (int i = 0; i < 12; i++)
+        /*for (int i = 0; i < 12; i++)
         {
             print(moveGenerator.board.piecePositionBoards[i]);
-        }
+        }*/
     }
 
     public void EngineMoveCountTest()

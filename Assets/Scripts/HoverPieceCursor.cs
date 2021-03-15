@@ -24,7 +24,7 @@ public class HoverPieceCursor : MonoBehaviour
     }
     private void OnTriggerExit2D(Collider2D other)
     {
-        if (!inDrag)
+        if (!inDrag && hoveredPiece != null)
         {
             hoveredPiece.GetComponent<SpriteRenderer>().color = Color.white;
             hoveredPiece = null;

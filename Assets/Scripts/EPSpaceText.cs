@@ -17,6 +17,6 @@ public class EPSpaceText : MonoBehaviour
     // Update is called once per frame
     void OnMove()
     {
-        txt.text = MoveGenerator.SpaceName(mngr.moveGenerator.epSpace);
+        txt.text = ChessBoard.SpaceName(mngr.moveGenerator.gameData.epSpace);
     }
 }

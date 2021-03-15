@@ -87,7 +87,7 @@ public class Engine
             if(reportMoves) Debug.Log("I just made " + moveGenerator.MoveName(move.Start, move.End));
             var thisMove = moveGenerator.MovePiece(move.Start, move.End);
             lastOutput = output;
-            output += MoveGenCountTest(depth - 1, MoveGenerator.OtherPlayer(playerToStart));
+            output += MoveGenCountTest(depth - 1, playerToStart ^ 1);
             moveGenerator.UndoMovePiece(thisMove);
             if (depth == originalDepth) Debug.Log(moveGenerator.MoveName(move.Start, move.End) + "   " + (output-lastOutput).ToString("N0"));
         }

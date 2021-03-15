@@ -115,7 +115,6 @@ public class PieceHandler : MonoBehaviour
             {
                 if (board.piecePositionBoards[i][space])
                 {
-                    
                     Instantiate(pieceObjects[i], spaceHandler.ChessSpaceToWorldSpace(space), Quaternion.identity, gameObject.transform);
                 }
             }

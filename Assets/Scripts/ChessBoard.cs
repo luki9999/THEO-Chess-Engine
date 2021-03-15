@@ -1,6 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
+using UnityEngine; //just for Debug.Log, remove eventually
 using System;
 
 
@@ -78,7 +78,6 @@ public class BitBoard
     }
 }
 
-//lets just wildly steal the bitboard thing :D
 public class ChessBoard
 {
     public BitBoard[] piecePositionBoards; //white pawns, white knights, white bishops, white rooks, white queens, white kings, after that same for black
@@ -142,10 +141,10 @@ public class ChessBoard
         {
             if(piecePositionBoards[i][position])
             {
-                return i + 17;
+                return i + 1 + whitePiece;
             } else if (piecePositionBoards[i + 6][position])
             {
-                return i + 9;
+                return i + 1 + blackPiece;
             }
         }
         throw new IndexOutOfRangeException("Full spaces are not updated correctly or there is a beer bottle on the board.");
@@ -171,12 +170,19 @@ public class ChessBoard
     {
         //ok that was important
         if (piece == 0) return -1;
-        return ((piece & 0b11000) / 8)-1;
+        return (piece >> 4);
+        //return ((piece & 0b11000) == whitePiece) ? white: black ;
     }
 
     public static int PieceType(int piece)
     {
         return piece & 0b111;
+    }
+
+    //TODO make function to move specific piece without looping through all boards, has to be very fast
+    public static int BitBoardIndex(int piece)
+    {
+        return (piece & 0b111) - 1 + 6 * (piece >> 4);
     }
 
     public static int SpaceColor(int space)
