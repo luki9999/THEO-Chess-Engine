@@ -212,6 +212,14 @@ public class ChessBoard
         return pieceNames[PieceType(piece) - 1];
     }
 
+    public void UpdateFullSpaces()
+    {
+        for (int i = 0; i < 12; i++)
+        {
+            fullSpaces += piecePositionBoards[1];
+        }
+    }
+
     //backwards compatibility...
     //get rid of this some day
     //
