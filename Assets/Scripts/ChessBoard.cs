@@ -110,7 +110,7 @@ public class ChessBoard
             whiteSpaces[i] = ((SpaceX(i) + SpaceY(i)) % 2 == 0);
         }
         //remove this once you are using the new stuff
-        SomeTests();
+        //SomeTests();
     }
     //operators and nice stuff
 
