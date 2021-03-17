@@ -26,12 +26,12 @@ public class GameManagerEditor : Editor
         if (GUILayout.Button("Starting Position") && self.boardExists)
         {
             self.spaceHandler.UnHighlightAll();
-            self.LoadPosition(1, GameMngr.startingPosString);
+            self.LoadPosition(GameMngr.startingPosString);
         }
         if (GUILayout.Button("Empty Board") && self.boardExists)
         {
             self.spaceHandler.UnHighlightAll();
-            self.LoadPosition(1, "8/8/8/8/8/8/8/8  w KQkq - 0 1");
+            self.LoadPosition("8/8/8/8/8/8/8/8  w KQkq - 0 1");
         }
         GUILayout.Space(10);
         if (GUILayout.Button("Test Pawn Move Generation") && self.boardExists)
@@ -76,27 +76,27 @@ public class GameManagerEditor : Editor
         if (GUILayout.Button("Test 1") && self.boardExists)
         {
             self.spaceHandler.UnHighlightAll();
-            self.LoadPosition(1, GameMngr.perftTest1);
+            self.LoadPosition(GameMngr.perftTest1);
         }
         if (GUILayout.Button("Test 2") && self.boardExists)
         {
             self.spaceHandler.UnHighlightAll();
-            self.LoadPosition(1, GameMngr.perftTest2);
+            self.LoadPosition(GameMngr.perftTest2);
         }
         if (GUILayout.Button("Test 3") && self.boardExists)
         {
             self.spaceHandler.UnHighlightAll();
-            self.LoadPosition(1, GameMngr.perftTest3);
+            self.LoadPosition(GameMngr.perftTest3);
         }
         if (GUILayout.Button("Test 4") && self.boardExists)
         {
             self.spaceHandler.UnHighlightAll();
-            self.LoadPosition(1, GameMngr.perftTest4);
+            self.LoadPosition(GameMngr.perftTest4);
         }
         if (GUILayout.Button("Test 5") && self.boardExists)
         {
             self.spaceHandler.UnHighlightAll();
-            self.LoadPosition(1, GameMngr.perftTest5);
+            self.LoadPosition(GameMngr.perftTest5);
         }
         GUILayout.EndHorizontal();
 

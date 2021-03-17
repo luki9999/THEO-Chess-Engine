@@ -6,6 +6,8 @@ TagManager:
   tags:
   - Manager
   - Piece
+  - Space
+  - Console
   layers:
   - Default
   - TransparentFX
