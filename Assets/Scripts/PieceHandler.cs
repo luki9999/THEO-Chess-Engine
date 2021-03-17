@@ -2,6 +2,7 @@ using System.Collections;
 using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class PieceHandler : MonoBehaviour
 {
@@ -22,15 +23,12 @@ public class PieceHandler : MonoBehaviour
     int endSpace;
 
     bool respectTurn;
-
-    // Start is called before the first frame update
     void Awake()
     {
         moveGenerator = manager.moveGenerator;
         respectTurn = manager.dragAndDropRespectsTurns;
     }
 
-    // Update is called once per frame
     void Update()
     {
         DragDrop(respectTurn);
@@ -63,16 +61,11 @@ public class PieceHandler : MonoBehaviour
         {
             endSpace = SnapToSpace(selectedPiece, startSpace, possibleMovesForClickedPiece);
             spaceHandler.UnHighlightAll(); // Doesnt need to be fast :D
-            
-            
             selectedPiece.GetComponent<BoxCollider2D>().enabled = true;
             selectedPiece.GetComponent<SpriteRenderer>().sortingOrder = 0;
             if (startSpace != endSpace)
             {
                 manager.MakeMoveNoGraphics(startSpace, endSpace);
-            }
-            if (startSpace != endSpace)
-            {
                 if (ChessBoard.SpaceY(endSpace) == 7 && ChessBoard.PieceType(moveGenerator.board[endSpace]) == 5)
                 { // white pawn became queen
                     ChangePieceToQueen(selectedPiece, 1);
@@ -90,10 +83,17 @@ public class PieceHandler : MonoBehaviour
     int SnapToSpace(GameObject piece, int startSpace, List<int> possibleSpaces)
     {
         int space = spaceHandler.WorldSpaceToChessSpace(piece.transform.position);
+        //taking a piece, only one piece per space
+        if (GetPieceAtPos(space) != null)
+        {
+            DisablePiece(space);
+        }
+        //resetting the piece in case of an ivalid move
         if (space < 0 || space > 63 || space == startSpace || !possibleSpaces.Contains(space))
         {
             space = startSpace;
         }
+        //actual snapping
         piece.transform.position = spaceHandler.ChessSpaceToWorldSpace(space);
         return space;
     }

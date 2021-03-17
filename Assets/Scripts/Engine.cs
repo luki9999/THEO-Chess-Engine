@@ -37,12 +37,7 @@ public class Engine
         return output;
     }
 
-    void BuildTree()
-    {
-
-    }
-
-    void ChooseMove()
+    void Search()
     {
 
     }

@@ -69,36 +69,15 @@ public class GameMngr : MonoBehaviour
 
     void OnMove()
     {
-        //ShowAttackedSpaces();
-        spaceHandler.UnHighlightAll();
-        for (int i = 0; i < 64; i++)
-        {
-            /*if (moveGenerator.isSpaceAttackedByWhite[i])
-            {
-                spaceHandler.HighlightSpace(i, Color.red, 0.5f);
-            }
-            if (moveGenerator.isSpaceAttackedByBlack[i])
-            {
-                spaceHandler.HighlightSpace(i, Color.green, 0.5f);
-            }*/
-            /*if (moveGenerator.board.fullSpaces[i])
-            {
-                spaceHandler.HighlightSpace(i, Color.cyan, 0.5f);
-            }*/
-        }
-        spaceHandler.HighlightSpace(moveGenerator.whiteKingPosition, Color.white, 0.8f);
-        spaceHandler.HighlightSpace(moveGenerator.blackKingPosition, Color.black, 0.8f);
-        if (theoIsBlack && playerOnTurn == 0)
+        if (theoIsBlack && playerOnTurn == ChessBoard.black)
         {
             var theosMove = theo.ChooseRandomMove(playerOnTurn);
             MakeMoveAnimated(theosMove.Start, theosMove.End);
-        } else if (theoIsWhite && playerOnTurn == 1)
+        } else if (theoIsWhite && playerOnTurn == ChessBoard.white)
         {
             var theosMove = theo.ChooseRandomMove(playerOnTurn);
             MakeMoveAnimated(theosMove.Start, theosMove.End);
         }
-        pieceHandler.ClearBoard();
-        pieceHandler.LayOutPieces(moveGenerator.board);
     }
 
     public void MakeMoveNoGraphics(int start, int end)
@@ -107,27 +86,30 @@ public class GameMngr : MonoBehaviour
         if (lastMove.Count == 5) // Castling!
         {
             pieceHandler.MovePieceSprite(lastMove[3][0], lastMove[4][0]);
-        } else if (lastMove.Count == 4)
+        } else if (lastMove.Count == 4) // en passant
         {
             pieceHandler.DisablePiece(lastMove[3][0]);
         }
-        
-        playerOnTurn = (playerOnTurn == 1) ? 0 : 1;
-        if (pieceHandler.GetPieceAtPos(end) != null)
-        {
-            pieceHandler.DisablePiece(end);
-        }
+        playerOnTurn = (playerOnTurn == ChessBoard.white) ? ChessBoard.black : ChessBoard.white;
         moveMade.Invoke();
     }
 
     public void MakeMove(int start, int end)
     {
+        if (pieceHandler.GetPieceAtPos(end) != null)
+        {
+            pieceHandler.DisablePiece(end);
+        }
         MakeMoveNoGraphics(start, end);
         pieceHandler.MovePieceSprite(start, end);
     }
 
     public void MakeMoveAnimated(int start, int end)
     {
+        if (pieceHandler.GetPieceAtPos(end) != null)
+        {
+            pieceHandler.DisablePiece(end);
+        }
         MakeMoveNoGraphics(start, end);
         pieceHandler.MovePieceSpriteAnimated(start, end, moveAnimationTime);
     }
