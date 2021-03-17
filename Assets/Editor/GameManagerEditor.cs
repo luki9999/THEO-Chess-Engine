@@ -6,7 +6,6 @@ using UnityEditor;
 [CustomEditor(typeof(GameMngr))]
 public class GameManagerEditor : Editor
 {
-
     public override void OnInspectorGUI()
     {
         GameMngr self = (GameMngr)target;
