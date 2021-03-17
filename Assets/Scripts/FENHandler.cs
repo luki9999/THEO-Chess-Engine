@@ -63,16 +63,16 @@ public class FENHandler
         {
             switch (currentLetter)
             {
-                case 'k':
+                case 'K':
                     output.castling[0] = true;
                     break;
-                case 'q':
+                case 'Q':
                     output.castling[1] = true;
                     break;
-                case 'K':
+                case 'k':
                     output.castling[2] = true;
                     break;
-                case 'Q':
+                case 'q':
                     output.castling[3] = true;
                     break;
             }
