@@ -41,8 +41,6 @@ public class MoveGenerator
         board = new ChessBoard();
         gameData = new ChessGameData(ChessBoard.white, 0, new bool[] { true, true, true, true });
         GenerateSpacesToEdgeData();
-        //just for testing in unity editor, does nothing on runtime
-        FENHandler.FillFENDict();
     }
 
     //getters and initalisation

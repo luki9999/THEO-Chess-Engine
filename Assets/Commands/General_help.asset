@@ -9,8 +9,8 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 45fd59b81769d2345b75585baa4346ca, type: 3}
-  m_Name: FEN_Fenloading
+  m_Script: {fileID: 11500000, guid: 75483a7eea108414bb15f19e1dbbf433, type: 3}
+  m_Name: General_help
   m_EditorClassIdentifier: 
-  command: fen
-  help: 'Loads a given FEN string to the board.\nSyntax: fen "FENSTRING"'
+  commandString: help
+  helpString: 

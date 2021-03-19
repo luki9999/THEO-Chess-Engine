@@ -9,11 +9,8 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6e64b88684b3d4e44919031e50e62c11, type: 3}
-  m_Name: Engine_perft
+  m_Script: {fileID: 11500000, guid: f0c635faaafb77045a1c058f0ec89d6f, type: 3}
+  m_Name: FEN_testpos
   m_EditorClassIdentifier: 
-  commandString: perft
-  helpString: 'Runs a performance test on the engine with a specified depth.
-
-    Syntax:
-    perft (int)depth'
+  commandString: testpos
+  helpString: Loads a predefined FEN for testing. Enter "testpos help" to show options.

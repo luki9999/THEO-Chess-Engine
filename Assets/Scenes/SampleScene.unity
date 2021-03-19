@@ -806,9 +806,9 @@ MonoBehaviour:
   spaceHandler: {fileID: 1972327885}
   boardCreation: {fileID: 1972327882}
   boardExists: 1
-  dragAndDropRespectsTurns: 1
+  dragAndDropRespectsTurns: 0
   cursor: {fileID: 1229894327}
-  theoIsBlack: 1
+  theoIsBlack: 0
   theoIsWhite: 0
   playerOnTurn: 0
   moveAnimationTime: 0.3
@@ -4966,7 +4966,7 @@ MonoBehaviour:
     m_AlignByGeometry: 0
     m_RichText: 1
     m_HorizontalOverflow: 0
-    m_VerticalOverflow: 0
+    m_VerticalOverflow: 1
     m_LineSpacing: 1
   m_Text: 
 --- !u!222 &845803999
@@ -9813,10 +9813,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   consoleCommands:
+  - {fileID: 11400000, guid: 47c830ef0755bf942a4dfa1d4458a50a, type: 2}
+  - {fileID: 11400000, guid: 6b98c26221ef2834b8202a386568fa2d, type: 2}
+  - {fileID: 11400000, guid: 62bcc88f0cc536242b9e1f375c48fd5c, type: 2}
   - {fileID: 11400000, guid: da1dca4c0bcceab4f98b22988e4e5fce, type: 2}
-  - {fileID: 11400000, guid: cd229d92a00ed9640a6420d6cff4128f, type: 2}
   - {fileID: 11400000, guid: 4aff131604e99af498fa7330aa5b3203, type: 2}
   - {fileID: 11400000, guid: 4bb6846803cbf424c896740adebde9a7, type: 2}
+  - {fileID: 11400000, guid: cd229d92a00ed9640a6420d6cff4128f, type: 2}
+  - {fileID: 11400000, guid: 853e58d3e2cbb7249a8013737d3fc3b3, type: 2}
+  - {fileID: 11400000, guid: 19e56e78557d25046a3f4865ba64a3b2, type: 2}
   inputUI: {fileID: 420004694}
   outputUI: {fileID: 845803998}
 --- !u!1 &1476746548

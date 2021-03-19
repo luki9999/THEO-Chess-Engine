@@ -9,11 +9,8 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6e64b88684b3d4e44919031e50e62c11, type: 3}
-  m_Name: Engine_perft
+  m_Script: {fileID: 11500000, guid: ff3fb4d83b415854e8ee13e91b3c69db, type: 3}
+  m_Name: General_clear
   m_EditorClassIdentifier: 
-  commandString: perft
-  helpString: 'Runs a performance test on the engine with a specified depth.
-
-    Syntax:
-    perft (int)depth'
+  commandString: clear
+  helpString: Clears the console

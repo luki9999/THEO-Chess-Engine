@@ -5,12 +5,17 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "New Perft Command", menuName = "Commands/Perft")]
 public class PerftCommand : ConsoleCommand
 {
+    GameMngr manager;
+    ConsoleBehaviour console;
+    public override void Init()
+    {
+        manager = GameObject.FindGameObjectWithTag("Manager").GetComponent<GameMngr>();
+        console = GameObject.FindGameObjectWithTag("Console").GetComponent<ConsoleBehaviour>();
+    }
     public override bool Action(string[] args)
     {
         int perftTestDepth;
         //uh I hate doing this
-        GameMngr manager = GameObject.FindGameObjectWithTag("Manager").GetComponent<GameMngr>();
-        ConsoleBehaviour console = GameObject.FindGameObjectWithTag("Console").GetComponent<ConsoleBehaviour>();
         try
         {
             perftTestDepth = int.Parse(args[0]);

@@ -10,7 +10,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3bcbdfaca5b3a0541a0d5925d027a702, type: 3}
-  m_Name: General_Showmoves
+  m_Name: Movegen_showmoves
   m_EditorClassIdentifier: 
-  command: showmoves
-  help: 'Shows legal moves for a specified player.\nSyntax: showmoves white (or black)'
+  commandString: showmoves
+  helpString: 'Displays all possible moves for a given color.\nSyntax: showmoves
+    white|black'

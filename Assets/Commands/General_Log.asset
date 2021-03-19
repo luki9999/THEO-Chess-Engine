@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6128a6b90d3606b4f8929855136488f8, type: 3}
-  m_Name: General_Log
+  m_Name: General_log
   m_EditorClassIdentifier: 
-  command: _log
-  help: 
+  commandString: log
+  helpString: Logs a given string to the console. Useless.

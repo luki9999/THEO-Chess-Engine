@@ -7,15 +7,17 @@ public interface IConsoleCommand
     string CommandString { get; }
     string HelpString { get; }
     bool Action(string[] args);
+    void Init();
 }
 
 
 public abstract class ConsoleCommand : ScriptableObject, IConsoleCommand
 {
-    [SerializeField] string command = string.Empty;
-    [SerializeField] string help = string.Empty;
-    string IConsoleCommand.CommandString => command;
-    string IConsoleCommand.HelpString => help;
+    [SerializeField] public string commandString = string.Empty;
+    [TextArea(5,10)][SerializeField] public string helpString = string.Empty;
+    string IConsoleCommand.CommandString => commandString;
+    string IConsoleCommand.HelpString => helpString;
     public abstract bool Action(string[] args);
+    public abstract void Init();
 }
 

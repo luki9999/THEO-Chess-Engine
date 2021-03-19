@@ -207,6 +207,23 @@ public class ChessBoard
         return fileLetters[x].ToString() + rankNumbers[y].ToString();
     }
 
+    public static int SpaceNumberFromString(string spaceName)
+    {
+        int x=0, y=0;
+        for (int i = 0; i < 8; i++)
+        {
+            if(fileLetters[i] == spaceName[0])
+            {
+                x = i;
+            } 
+            if(rankNumbers[i] == spaceName[1])
+            {
+                y = i;
+            }
+        }
+        return 8 * y + x;
+    }
+
     public static char PieceLetter(int piece)
     {
         return pieceNames[PieceType(piece) - 1];

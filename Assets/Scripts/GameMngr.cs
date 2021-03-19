@@ -51,7 +51,6 @@ public class GameMngr : MonoBehaviour
         moveGenerator = new MoveGenerator();
         ChessBoard test = new ChessBoard();
         moveMade.AddListener(OnMove);
-        FENHandler.FillFENDict();
     }
 
     void Start()
@@ -113,6 +112,14 @@ public class GameMngr : MonoBehaviour
         }
         MakeMoveNoGraphics(start, end);
         pieceHandler.MovePieceSpriteAnimated(start, end, moveAnimationTime);
+    }
+
+    public void MakeMoveFromString(string moveString)
+    {
+        //TODO error handling
+        string startString = moveString.Substring(0, 2);
+        string endString = moveString.Substring(2, 2);
+        MakeMove(ChessBoard.SpaceNumberFromString(startString), ChessBoard.SpaceNumberFromString(endString));
     }
 
     void Update()
@@ -185,6 +192,7 @@ public class GameMngr : MonoBehaviour
     public void LoadPosition(string fen)
     {
         pieceHandler.ClearBoard();
+        spaceHandler.UnHighlightAll();
         moveGenerator.LoadFEN(fen);
         playerOnTurn = moveGenerator.gameData.playerOnTurn;
         pieceHandler.LayOutPieces(moveGenerator.board);
