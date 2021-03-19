@@ -54,9 +54,12 @@ public class ConsoleBehaviour : MonoBehaviour
 
     void RunCommand(string input)
     {
-        outputUI.text += "\n> " + input;
-        console.ParseCommandLine(input);
-        inputUI.text = string.Empty;
+        if (input != "")
+        {
+            outputUI.text += "\n> " + input;
+            console.ParseCommandLine(input);
+            inputUI.text = string.Empty;
+        }
         inputUI.ActivateInputField();
     }
 

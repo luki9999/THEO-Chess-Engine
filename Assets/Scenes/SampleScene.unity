@@ -9815,6 +9815,8 @@ MonoBehaviour:
   consoleCommands:
   - {fileID: 11400000, guid: da1dca4c0bcceab4f98b22988e4e5fce, type: 2}
   - {fileID: 11400000, guid: cd229d92a00ed9640a6420d6cff4128f, type: 2}
+  - {fileID: 11400000, guid: 4aff131604e99af498fa7330aa5b3203, type: 2}
+  - {fileID: 11400000, guid: 4bb6846803cbf424c896740adebde9a7, type: 2}
   inputUI: {fileID: 420004694}
   outputUI: {fileID: 845803998}
 --- !u!1 &1476746548
