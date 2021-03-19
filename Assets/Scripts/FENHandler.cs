@@ -6,18 +6,21 @@ using System.Collections.Generic;
 public class FENHandler
 {
     public static readonly char[] fenPieceLetters = new char[] { 'P', 'N', 'B', 'R', 'Q', 'K' };
-    public static Dictionary<char, int> fenParsing = new Dictionary<char, int>();
-
-    public static void FillFENDict()
+    public static Dictionary<char, int> fenParsing = new Dictionary<char, int>
     {
-        if (fenParsing.Count == 0) {
-            for (int pieceType = 0; pieceType < 6; pieceType++)
-            {
-                fenParsing.Add(fenPieceLetters[pieceType], pieceType + 1 + ChessBoard.whitePiece);
-                fenParsing.Add(char.ToLower(fenPieceLetters[pieceType]), pieceType + 1 + ChessBoard.blackPiece);
-            }
-        }
-    }
+        {'P', ChessBoard.pawn | ChessBoard.whitePiece },
+        {'N', ChessBoard.knight | ChessBoard.whitePiece },
+        {'B', ChessBoard.bishop | ChessBoard.whitePiece },
+        {'R', ChessBoard.rook | ChessBoard.whitePiece },
+        {'Q', ChessBoard.queen | ChessBoard.whitePiece },
+        {'K', ChessBoard.king | ChessBoard.whitePiece },
+        {'p', ChessBoard.pawn | ChessBoard.blackPiece },
+        {'n', ChessBoard.knight | ChessBoard.blackPiece },
+        {'b', ChessBoard.bishop | ChessBoard.blackPiece },
+        {'r', ChessBoard.rook | ChessBoard.blackPiece },
+        {'q', ChessBoard.queen | ChessBoard.blackPiece },
+        {'k', ChessBoard.king | ChessBoard.blackPiece }
+    };
 
     public static ChessBoard ReadFEN(string fenNotation)
     {

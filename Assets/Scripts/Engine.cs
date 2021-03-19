@@ -55,7 +55,7 @@ public class Engine
         return allMoves[moveIndex];
     }
 
-    List<Move> GetMoveset(int player)
+    public List<Move> GetMoveset(int player)
     {
         var output = new List<Move>();
         for (int space = 0; space<64;space++)
@@ -72,7 +72,7 @@ public class Engine
         return output;
     }
 
-    public int MoveGenCountTest(int depth, int playerToStart, bool reportMoves = false)
+    public int MoveGenCountTest(int depth, int playerToStart, bool reportMoves = false, ConsoleBehaviour console = null)
     {
         if (depth == 0) return 1;
         List<Move> moves = GetMoveset(playerToStart);
@@ -85,8 +85,8 @@ public class Engine
             output += MoveGenCountTest(depth - 1, playerToStart ^ 1);
             moveGenerator.UndoMovePiece(thisMove);
             if (depth == originalDepth) Debug.Log(moveGenerator.MoveName(move.Start, move.End, true) + "   " + (output-lastOutput).ToString("N0"));
+            if (depth == originalDepth && console != null) console.Print(moveGenerator.MoveName(move.Start, move.End, true) + "   " + (output - lastOutput).ToString("N0"));
         }
-
         return output;
     }
 
