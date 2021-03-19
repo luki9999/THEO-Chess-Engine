@@ -204,6 +204,13 @@ public class GameMngr : MonoBehaviour
         }*/
     }
 
+    public void FlipBoard()
+    {
+        pieceHandler.ClearBoard();
+        boardFlipped = !boardFlipped;
+        pieceHandler.LayOutPieces(moveGenerator.board);
+    }
+
     public void EngineMoveCountTest()
     {
         for (int i = 1; i <= perftTestDepth; i++)
