@@ -5,14 +5,11 @@ using UnityEngine;
 public class SpaceHandler : MonoBehaviour
 {
     public BoardCreation boardCreation;
-    void Start()
-    {
-        //boardCreation = GetComponent<BoardCreation>();
-    }
+    public GameMngr manager;
 
-    public Vector3 ChessSpaceToWorldSpace(int x, int y)
+    public static int FlipIndex(int index)
     {
-        return new Vector3(-3.5f + x + transform.position.x, -3.5f + y + transform.position.y, 0);
+        return 63 - index;
     }
 
     public Vector3 ChessSpaceToWorldSpace(int space)
@@ -31,14 +28,8 @@ public class SpaceHandler : MonoBehaviour
 
     GameObject GetSpaceObjectAtPosition(int pos)
     {
+        if (manager.boardFlipped) pos = FlipIndex(pos);
         return boardCreation.spaces[pos];
-    }
-
-    //Never ever use that again
-    public void HighlightSpace(int x, int y, Color color, float lerpValue = 1)
-    {
-        GameObject spaceToHighlight = GetSpaceObjectAtPosition(x + 8 * y);
-        spaceToHighlight.GetComponent<SpriteRenderer>().color = Color.Lerp(spaceToHighlight.GetComponent<SpriteRenderer>().color, color , lerpValue);
     }
 
     public void HighlightSpace(int space, Color color, float lerpValue = 1)
@@ -62,22 +53,6 @@ public class SpaceHandler : MonoBehaviour
         {
             HighlightSpace(move, color, lerpValue);
         }
-    }
-
-    public Color GetSpaceColorRGB(int x, int y)
-    {
-        Color color;
-        if (ChessBoard.SpaceColor(8 * y + x) == 0) { color = boardCreation.blackColor; }
-        else { color = boardCreation.whiteColor; }
-        return color;
-    }
-
-    public Color GetSpaceColorRGB(int space)
-    {
-        Color color;
-        if (ChessBoard.SpaceColor(space) == 0) { color = boardCreation.blackColor; }
-        else { color = boardCreation.whiteColor; }
-        return color;
     }
 
     public void UnHighlightAll()

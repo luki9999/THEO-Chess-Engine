@@ -40,6 +40,7 @@ public class PieceHandler : MonoBehaviour
         {
             selectedPiece = cursor.hoveredPiece;
             startSpace = spaceHandler.WorldSpaceToChessSpace(selectedPiece.transform.position);
+            if (manager.boardFlipped) startSpace = SpaceHandler.FlipIndex(startSpace);
             if (!respectTurn || manager.playerOnTurn == ChessBoard.PieceColor(moveGenerator.board[startSpace])){
                 possibleMovesForClickedPiece = moveGenerator.GetLegalMovesForPiece(startSpace);
                 spaceHandler.HighlightMoveList(possibleMovesForClickedPiece, Color.cyan, 0.5f);
@@ -60,6 +61,7 @@ public class PieceHandler : MonoBehaviour
         else if (Input.GetMouseButtonUp(0) && selectedPiece != null)
         {
             endSpace = SnapToSpace(selectedPiece, startSpace, possibleMovesForClickedPiece);
+            if (manager.boardFlipped) endSpace = SpaceHandler.FlipIndex(endSpace);
             spaceHandler.UnHighlightAll(); // Doesnt need to be fast :D
             selectedPiece.GetComponent<BoxCollider2D>().enabled = true;
             selectedPiece.GetComponent<SpriteRenderer>().sortingOrder = 0;
@@ -67,12 +69,14 @@ public class PieceHandler : MonoBehaviour
             {
                 manager.MakeMoveNoGraphics(startSpace, endSpace);
                 if (ChessBoard.SpaceY(endSpace) == 7 && ChessBoard.PieceType(moveGenerator.board[endSpace]) == 5)
-                { // white pawn became queen
+                { // white pawn maybe became queen
                     ChangePieceToQueen(selectedPiece, 1);
+                    ReloadPieces();
                 }
                 else if (ChessBoard.SpaceY(endSpace) == 0 && ChessBoard.PieceType(moveGenerator.board[endSpace]) == 5)
-                {// black pawn became queen
+                {// black pawn maybe became queen
                     ChangePieceToQueen(selectedPiece, 0);
+                    ReloadPieces();
                 }
             }
             selectedPiece = null;
@@ -83,15 +87,16 @@ public class PieceHandler : MonoBehaviour
     int SnapToSpace(GameObject piece, int startSpace, List<int> possibleSpaces)
     {
         int space = spaceHandler.WorldSpaceToChessSpace(piece.transform.position);
+        //resetting the piece in case of an invalid move
+        if (space < 0 || space > 63 || space == startSpace || !possibleSpaces.Contains(space))
+        {
+            piece.transform.position = spaceHandler.ChessSpaceToWorldSpace(startSpace);
+            return startSpace;
+        }
         //taking a piece, only one piece per space
         if (GetPieceAtPos(space) != null)
         {
             DisablePiece(space);
-        }
-        //resetting the piece in case of an ivalid move
-        if (space < 0 || space > 63 || space == startSpace || !possibleSpaces.Contains(space))
-        {
-            space = startSpace;
         }
         //actual snapping
         piece.transform.position = spaceHandler.ChessSpaceToWorldSpace(space);
@@ -115,10 +120,17 @@ public class PieceHandler : MonoBehaviour
             {
                 if (board.piecePositionBoards[i][space])
                 {
-                    Instantiate(pieceObjects[i], spaceHandler.ChessSpaceToWorldSpace(space), Quaternion.identity, gameObject.transform);
+                    int spaceToPlaceAt = (manager.boardFlipped) ? SpaceHandler.FlipIndex(space) : space;
+                    Instantiate(pieceObjects[i], spaceHandler.ChessSpaceToWorldSpace(spaceToPlaceAt), Quaternion.identity, gameObject.transform);
                 }
             }
         }
+    }
+
+    public void ReloadPieces()
+    {
+        ClearBoard();
+        LayOutPieces(moveGenerator.board);
     }
 
     public void MovePieceSprite(int oldSpace, int newSpace)

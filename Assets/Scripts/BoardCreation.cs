@@ -8,7 +8,7 @@ public class BoardCreation : MonoBehaviour
     public Color whiteColor;
     public Color blackColor;
     public GameObject space;
-    
+    public GameMngr manager;
 
     public List<GameObject> spaces;
 
@@ -33,16 +33,14 @@ public class BoardCreation : MonoBehaviour
         RemoveBoard();
         GameObject newSpace;
         SpriteRenderer newRenderer;
-        for (int y = 0; y < 8; y++)
-        {
-            for (int x = 0; x < 8; x++)
-            {
-                newSpace = Instantiate(space, spaceHandler.ChessSpaceToWorldSpace(x, y), Quaternion.identity, gameObject.transform);
-                newRenderer = newSpace.GetComponent<SpriteRenderer>();
-                if (ChessBoard.SpaceColor(8 * y + x) == 0) { newRenderer.color = blackColor; }
-                else { newRenderer.color = whiteColor; }
-                spaces.Add(newSpace);
-            }
+        int currentSpace;
+        for (int i = 0; i<64; i++) {
+            currentSpace = (manager.boardFlipped) ? SpaceHandler.FlipIndex(i) : i;
+            newSpace = Instantiate(space, spaceHandler.ChessSpaceToWorldSpace(currentSpace), Quaternion.identity, gameObject.transform);
+            newRenderer = newSpace.GetComponent<SpriteRenderer>();
+            if (ChessBoard.SpaceColor(currentSpace) == 0) { newRenderer.color = blackColor; }
+            else { newRenderer.color = whiteColor; }
+            spaces.Add(newSpace);
         }
     }
 

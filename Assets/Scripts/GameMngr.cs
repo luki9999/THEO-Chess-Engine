@@ -13,6 +13,8 @@ public class GameMngr : MonoBehaviour
     public bool dragAndDropRespectsTurns;
     public GameObject cursor;
 
+    public bool boardFlipped;
+
     //sehr dumm bitte ändern
     public bool theoIsBlack;
     public bool theoIsWhite;
@@ -155,7 +157,7 @@ public class GameMngr : MonoBehaviour
             spaceHandler.UnHighlightAll();
             List<int> possibleMoves = moveGenerator.GetPossibleSpacesForPiece(3+ 3*8);
             spaceHandler.HighlightMoveList(possibleMoves, Color.cyan, 0.5f);
-            spaceHandler.HighlightSpace(3, 3, Color.green, 0.5f);
+            spaceHandler.HighlightSpace(27, Color.green, 0.5f);
         }
         else
         {
@@ -164,8 +166,8 @@ public class GameMngr : MonoBehaviour
             List<int> possibleMoves2 = moveGenerator.GetPossibleSpacesForPiece(6+ 5*8);
             spaceHandler.HighlightMoveList(possibleMoves1, Color.cyan, 0.5f);
             spaceHandler.HighlightMoveList(possibleMoves2, Color.magenta, 0.5f);
-            spaceHandler.HighlightSpace(3, 1, Color.green, 0.5f);
-            spaceHandler.HighlightSpace(6, 5, Color.red, 0.5f);
+            spaceHandler.HighlightSpace(11, Color.green, 0.5f);
+            spaceHandler.HighlightSpace(46, Color.red, 0.5f);
         }
     }
 

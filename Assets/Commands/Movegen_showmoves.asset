@@ -13,5 +13,7 @@ MonoBehaviour:
   m_Name: Movegen_showmoves
   m_EditorClassIdentifier: 
   commandString: showmoves
-  helpString: 'Displays all possible moves for a given color.\nSyntax: showmoves
+  helpString: 'Displays all possible moves for a given color.
+
+    Syntax: showmoves
     white|black'

@@ -24,7 +24,7 @@ public class MoveGenerator
 
     public static readonly int[] slideDirections = new int[] { 8, -8, 1, -1, 9, 7, -7, -9 };
     //up, down, right, left, ur, ul, dr, dl
-    public static readonly int[][] pawnDirs = new int[][] { new int[] { 8, 7, 9 }, new int[] { -8, -9, -7} };
+    public static readonly int[][] pawnDirs = new int[][] { new int[] { 8, 9, 7 }, new int[] { -8, -7, -9} };
     public static readonly int[][] knightDirs = new int[][] { new int[] { 15, 17 }, new int[] { -15, -17 },new int[] { -6, 10 },new int[] { 6, -10 } };
     //up, down, right, left
     public static int[][] SpacesToEdge;
