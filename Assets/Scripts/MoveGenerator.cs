@@ -463,11 +463,11 @@ public class MoveGenerator
         board[start] = 0; // Making the actual move
         if (end / 8 == 7 && currentPieceType == ChessBoard.pawn)
         {
-            board[end] = ChessBoard.white + ChessBoard.queen; // White pawn becomes white queen
+            board[end] = ChessBoard.whitePiece + ChessBoard.queen; // White pawn becomes white queen
         }
         else if (end / 8 == 0 && currentPieceType == ChessBoard.pawn)
         {
-            board[end] = ChessBoard.black + ChessBoard.queen; // Black pawn becomes black queen
+            board[end] = ChessBoard.blackPiece + ChessBoard.queen; // Black pawn becomes black queen
         }
         //ultra mega super slow
         SetAttackedSpaceData();

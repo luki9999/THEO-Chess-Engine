@@ -40,7 +40,6 @@ public class PieceHandler : MonoBehaviour
         {
             selectedPiece = cursor.hoveredPiece;
             startSpace = spaceHandler.WorldSpaceToChessSpace(selectedPiece.transform.position);
-            if (manager.boardFlipped) startSpace = SpaceHandler.FlipIndex(startSpace);
             if (!respectTurn || manager.playerOnTurn == ChessBoard.PieceColor(moveGenerator.board[startSpace])){
                 possibleMovesForClickedPiece = moveGenerator.GetLegalMovesForPiece(startSpace);
                 spaceHandler.HighlightMoveList(possibleMovesForClickedPiece, Color.cyan, 0.5f);
@@ -61,21 +60,14 @@ public class PieceHandler : MonoBehaviour
         else if (Input.GetMouseButtonUp(0) && selectedPiece != null)
         {
             endSpace = SnapToSpace(selectedPiece, startSpace, possibleMovesForClickedPiece);
-            if (manager.boardFlipped) endSpace = SpaceHandler.FlipIndex(endSpace);
             spaceHandler.UnHighlightAll(); // Doesnt need to be fast :D
             selectedPiece.GetComponent<BoxCollider2D>().enabled = true;
             selectedPiece.GetComponent<SpriteRenderer>().sortingOrder = 0;
             if (startSpace != endSpace)
             {
                 manager.MakeMoveNoGraphics(startSpace, endSpace);
-                if (ChessBoard.SpaceY(endSpace) == 7 && ChessBoard.PieceType(moveGenerator.board[endSpace]) == 5)
-                { // white pawn maybe became queen
-                    ChangePieceToQueen(selectedPiece, 1);
-                    ReloadPieces();
-                }
-                else if (ChessBoard.SpaceY(endSpace) == 0 && ChessBoard.PieceType(moveGenerator.board[endSpace]) == 5)
-                {// black pawn maybe became queen
-                    ChangePieceToQueen(selectedPiece, 0);
+                if ((ChessBoard.SpaceY(endSpace) == 7 || ChessBoard.SpaceY(endSpace) == 0) && ChessBoard.PieceType(moveGenerator.board[endSpace]) == ChessBoard.queen)
+                {
                     ReloadPieces();
                 }
             }
@@ -120,8 +112,7 @@ public class PieceHandler : MonoBehaviour
             {
                 if (board.piecePositionBoards[i][space])
                 {
-                    int spaceToPlaceAt = (manager.boardFlipped) ? SpaceHandler.FlipIndex(space) : space;
-                    Instantiate(pieceObjects[i], spaceHandler.ChessSpaceToWorldSpace(spaceToPlaceAt), Quaternion.identity, gameObject.transform);
+                    Instantiate(pieceObjects[i], spaceHandler.ChessSpaceToWorldSpace(space), Quaternion.identity, gameObject.transform);
                 }
             }
         }

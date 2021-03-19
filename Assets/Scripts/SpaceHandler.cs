@@ -14,6 +14,7 @@ public class SpaceHandler : MonoBehaviour
 
     public Vector3 ChessSpaceToWorldSpace(int space)
     {
+        if (manager.boardFlipped) space = FlipIndex(space);
         int x = ChessBoard.SpaceX(space);
         int y = ChessBoard.SpaceY(space);
         return new Vector3(-3.5f + x + transform.position.x, -3.5f + y + transform.position.y, 0);
@@ -21,9 +22,12 @@ public class SpaceHandler : MonoBehaviour
 
     public int WorldSpaceToChessSpace(Vector2 koords)
     {
+        int space = -1;
         int x = Mathf.RoundToInt(koords.x + 3.5f - transform.position.x);
         int y = Mathf.RoundToInt(koords.y + 3.5f - transform.position.y);
-        return (0<=x && x<8 && 0<=y && y<8) ? x + 8 * y : -1;
+        if (0 <= x && x < 8 && 0 <= y && y < 8) space = x + 8 * y;
+        if (manager.boardFlipped) space = FlipIndex(space);
+        return space;
     }
 
     GameObject GetSpaceObjectAtPosition(int pos)
