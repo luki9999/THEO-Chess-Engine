@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Threading;
+using UnityEngine.Events;
 
 public struct Move
 {
@@ -20,27 +22,120 @@ public class Engine
     GameMngr manager;
     MoveGenerator moveGenerator;
     ChessBoard board;
+    ConsoleBehaviour console;
     int possibleMoveCount;
     public int originalDepth;
 
-    int[] pieceValues = new int[] { 100, 300, 300, 500, 900 };
+    [HideInInspector]
+    public bool moveReady = false;
+    public Move nextFoundMove;
+
+    readonly int[] pieceValues = new int[] { 100, 300, 300, 500, 900, 0 };
+
+    readonly int[] pawnBonusSpaces = new int[] { 27, 28, 35, 36 };
+
+    const int pawnBonus = 20;
+    const int checkBonus = 50;
 
     public Engine(MoveGenerator moveGenToUse)
     {
         moveGenerator = moveGenToUse;
         manager = GameObject.FindGameObjectWithTag("Manager").GetComponent<GameMngr>();
         board = moveGenerator.board;
+        console = manager.console;
     }
 
-    public int EvalPosition()
+    public static int OtherPlayer(int player)
+    {
+        return (player == ChessBoard.white) ? ChessBoard.black : ChessBoard.white;
+    }
+
+    public int MaterialValue()
     {
         int output = 0;
+        for (int i = 0; i < 12; i++)
+        {
+            int currentPiece = ChessBoard.possiblePieces[i];
+            int currentValue = pieceValues[ChessBoard.PieceType(currentPiece) - 1];
+            output += (ChessBoard.PieceColor(currentPiece) == ChessBoard.white) ? board.PieceCount(currentPiece) * currentValue : -board.PieceCount(currentPiece) * currentValue;
+        }
         return output;
+    }
+
+    public int EvalPosition(int player)
+    {
+        int eval = MaterialValue();
+        if (moveGenerator.IsPlayerInCheck(player)) eval -= checkBonus;
+        if (moveGenerator.IsPlayerInCheck(OtherPlayer(player))) eval += checkBonus;
+        foreach (int i in pawnBonusSpaces)
+        {
+            if (ChessBoard.PieceType(board[i]) == ChessBoard.pawn && ChessBoard.PieceColor(board[i]) == player) 
+            {
+                eval += pawnBonus;
+            }
+        }
+        return (player == ChessBoard.white) ? eval : -eval;
+    }
+
+     
+
+    public int Search(int player, int depth)
+    {
+        if (depth == 0) return EvalPosition(player);
+        List<Move> moves = GetMoveset(player);
+        if (moves.Count == 0) 
+        {
+            if(moveGenerator.IsPlayerInCheck(player)) return -10000; //Checkmate 
+            return 0; // draw
+        }
+
+        int bestEval = -1000;
+
+        foreach (Move move in moves)
+        {
+            var madeMove = moveGenerator.MovePiece(move.Start, move.End);
+            int eval = -Search(OtherPlayer(player), depth - 1);
+            if (Mathf.Max(eval, bestEval) != bestEval)
+            { //found new best move
+                bestEval = Mathf.Max(eval, bestEval);
+            }
+            moveGenerator.UndoMovePiece(madeMove);
+        }
+
+        return bestEval;
     }
 
     public Move ChooseMove(int player, int depth)
     {
-        return new Move(0, 0, 0);
+        Move bestMove = new Move(0,0,0);
+        var possibleMoves = GetMoveset(player);
+        int bestEval = -10000;
+        foreach (Move move in possibleMoves)
+        {
+            string moveName = moveGenerator.MoveName(move.Start, move.End);
+            var madeMove = moveGenerator.MovePiece(move.Start, move.End);
+            int eval = -Search(OtherPlayer(player), depth - 1);
+            if (Mathf.Max(eval, bestEval) != bestEval)
+            { //found new best move
+                bestEval = Mathf.Max(eval, bestEval);
+                bestMove = move;
+            }
+            Debug.Log(moveName + " " + eval.ToString());
+            moveGenerator.UndoMovePiece(madeMove);
+        }
+        return bestMove;
+    }
+
+    public void ThreadedMove()
+    {
+        Thread thread = new Thread(ChooseMove) { IsBackground = true };
+        thread.Start();
+    }
+
+    public void ChooseMove()
+    {
+        nextFoundMove = ChooseMove(manager.playerOnTurn, manager.engineDepth);
+        moveReady = true;
     }
 
     public Move ChooseRandomMove(int player)

@@ -22,11 +22,14 @@ public class PieceHandler : MonoBehaviour
     int startSpace;
     int endSpace;
 
+    float pieceSize;
+
     bool respectTurn;
     void Awake()
     {
         moveGenerator = manager.moveGenerator;
         respectTurn = manager.dragAndDropRespectsTurns;
+        pieceSize = pieceObjects[0].transform.localScale.x;
     }
 
     void Update()
@@ -142,6 +145,7 @@ public class PieceHandler : MonoBehaviour
         GameObject takenPiece = GetPieceAtPos(newSpace);
         while (Time.time - startTime <= animTime)
         {
+            if (pieceToMove == null) break;
             pieceToMove.transform.position = Vector3.Lerp(spaceHandler.ChessSpaceToWorldSpace(oldSpace), spaceHandler.ChessSpaceToWorldSpace(newSpace), (Time.time - startTime) / animTime);
             yield return 0;
         }
@@ -182,7 +186,7 @@ public class PieceHandler : MonoBehaviour
 
     public GameObject GetPieceAtPos(int position)
     {
-        Collider2D hit = Physics2D.OverlapCircle(spaceHandler.ChessSpaceToWorldSpace(position), pieceObjects[0].transform.localScale.x / 100);
+        Collider2D hit = Physics2D.OverlapCircle(spaceHandler.ChessSpaceToWorldSpace(position), pieceSize / 100);
         return (hit != null) ? hit.gameObject : null;
     }
 }

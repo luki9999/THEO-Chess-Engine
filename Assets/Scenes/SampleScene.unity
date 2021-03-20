@@ -321,6 +321,7 @@ MonoBehaviour:
   gameOver: 0
   theoIsBlack: 0
   theoIsWhite: 0
+  engineDepth: 3
   playerOnTurn: 0
   moveAnimationTime: 0.3
   perftTestDepth: 4
@@ -624,7 +625,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 507.1, y: -455.4}
+  m_AnchoredPosition: {x: 507.1, y: -465.91}
   m_SizeDelta: {x: 691.6, y: 36.47}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &420004694
@@ -1316,8 +1317,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 169.80139, y: -418.47913}
-  m_SizeDelta: {x: 683.0985, y: 883.4897}
+  m_AnchoredPosition: {x: 169.80139, y: -432.9}
+  m_SizeDelta: {x: 683.0985, y: 933.3}
   m_Pivot: {x: 0, y: 0}
 --- !u!114 &845803998
 MonoBehaviour:
@@ -2949,6 +2950,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: f19f6f06457778d46a949d7570a08f88, type: 2}
   - {fileID: 11400000, guid: 3a8be685dff4aeb40b7cc15d690c2d77, type: 2}
   - {fileID: 11400000, guid: a9e2f048977f50a43b4759c640194854, type: 2}
+  - {fileID: 11400000, guid: b83fa75a9ca60dd4b8aa0c83a9551fe8, type: 2}
   inputUI: {fileID: 420004694}
   outputUI: {fileID: 845803998}
 --- !u!1 &1476746548

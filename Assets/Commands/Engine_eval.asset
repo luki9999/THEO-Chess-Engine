@@ -9,8 +9,8 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d47dfbdc55129c1478f1cdde98152170, type: 3}
-  m_Name: Engine_go
+  m_Script: {fileID: 11500000, guid: 9284f44c57053414ebcecaadcfe5559d, type: 3}
+  m_Name: Engine_eval
   m_EditorClassIdentifier: 
-  commandString: go
-  helpString: Searches and makes a move for the player currenly on turn.
+  commandString: eval
+  helpString: Evaluates the current position.

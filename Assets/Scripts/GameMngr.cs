@@ -21,6 +21,7 @@ public class GameMngr : MonoBehaviour
     //sehr dumm bitte ändern
     public bool theoIsBlack;
     public bool theoIsWhite;
+    public int engineDepth;
 
     public int playerOnTurn;
     public float moveAnimationTime;
@@ -80,12 +81,10 @@ public class GameMngr : MonoBehaviour
         if (gameOver) return;
         if (theoIsBlack && playerOnTurn == ChessBoard.black)
         {
-            var theosMove = theo.ChooseRandomMove(playerOnTurn);
-            MakeMoveAnimated(theosMove.Start, theosMove.End);
+            theo.ThreadedMove();
         } else if (theoIsWhite && playerOnTurn == ChessBoard.white)
         {
-            var theosMove = theo.ChooseRandomMove(playerOnTurn);
-            MakeMoveAnimated(theosMove.Start, theosMove.End);
+            theo.ThreadedMove();
         }
     }
 
@@ -152,6 +151,16 @@ public class GameMngr : MonoBehaviour
     void Update()
     {
         if (!cursor.activeSelf) cursor.SetActive(true);
+        if (theo.moveReady) 
+        {
+            OnEngineMoveReady();
+            theo.moveReady = false;
+        }
+    }
+
+    void OnEngineMoveReady()
+    {
+        MakeMoveAnimated(theo.nextFoundMove.Start, theo.nextFoundMove.End);
     }
 
     public void MoveGenerationTest(int piece)

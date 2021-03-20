@@ -76,6 +76,16 @@ public class BitBoard
     {
         return (int)boardInt;
     }
+
+    public int CountActive()
+    {
+        int count = 0;
+        for (int i = 0; i < 64; i++)
+        {
+            if (GetBoolAtSpace(i)) count++;
+        }
+        return count;
+    }
 }
 
 public class ChessBoard
@@ -88,6 +98,11 @@ public class ChessBoard
     public const int whitePiece = 8, blackPiece = 16;
     public const int white = 0, black = 1;
 
+    public static readonly int[] possiblePieces = new int[]
+    {
+        pawn | whitePiece, knight | whitePiece, bishop | whitePiece, rook | whitePiece, queen | whitePiece, king | whitePiece,
+        pawn | blackPiece, knight | blackPiece, bishop | blackPiece, rook | blackPiece, queen | blackPiece, king | blackPiece
+    };
 
     public static readonly char[] pieceNames = new char[] { ' ', 'N', 'B', 'R', 'Q', 'K' };
     public static readonly char[] fileLetters = new char[] { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h' };
@@ -229,25 +244,18 @@ public class ChessBoard
         return pieceNames[PieceType(piece) - 1];
     }
 
+    public int PieceCount(int piece)
+    {
+        int index = BitBoardIndex(piece);
+        return piecePositionBoards[index].CountActive();
+    }
+
     public void UpdateFullSpaces()
     {
         for (int i = 0; i < 12; i++)
         {
             fullSpaces += piecePositionBoards[1];
         }
-    }
-
-    //backwards compatibility...
-    //get rid of this some day
-    //
-    public static ChessBoard ConvertArrayToBoard(int[] spaces)
-    {
-        var output = new ChessBoard();
-        for (int i = 0; i < 64; i++)
-        {
-            output[i] = spaces[i];
-        }
-        return output;
     }
 
     //tests and shit
