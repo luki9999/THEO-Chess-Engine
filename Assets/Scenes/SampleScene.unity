@@ -313,16 +313,21 @@ MonoBehaviour:
   pieceHandler: {fileID: 1972327884}
   spaceHandler: {fileID: 1972327885}
   boardCreation: {fileID: 1972327882}
+  console: {fileID: 1476730448}
   boardExists: 0
-  dragAndDropRespectsTurns: 0
+  dragAndDropRespectsTurns: 1
   cursor: {fileID: 1229894327}
   boardFlipped: 0
+  gameOver: 0
   theoIsBlack: 0
   theoIsWhite: 0
   playerOnTurn: 0
   moveAnimationTime: 0.3
   perftTestDepth: 4
   moveMade:
+    m_PersistentCalls:
+      m_Calls: []
+  gameEnd:
     m_PersistentCalls:
       m_Calls: []
 --- !u!4 &239532363
@@ -2942,6 +2947,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 19e56e78557d25046a3f4865ba64a3b2, type: 2}
   - {fileID: 11400000, guid: dfec4662c70c0cd4abbc69a7ee1cbc89, type: 2}
   - {fileID: 11400000, guid: f19f6f06457778d46a949d7570a08f88, type: 2}
+  - {fileID: 11400000, guid: 3a8be685dff4aeb40b7cc15d690c2d77, type: 2}
+  - {fileID: 11400000, guid: a9e2f048977f50a43b4759c640194854, type: 2}
   inputUI: {fileID: 420004694}
   outputUI: {fileID: 845803998}
 --- !u!1 &1476746548

@@ -9,8 +9,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c28c9a4d88572314998043a843d4f33c, type: 3}
-  m_Name: General_flip
+  m_Script: {fileID: 11500000, guid: e3e106c0781c7e34fa91fd55fd903a83, type: 3}
+  m_Name: Engine_engine
   m_EditorClassIdentifier: 
-  commandString: flip
-  helpString: Flips the board.
+  commandString: engine
+  helpString: 'Makes the engine play a certain side. Use go to force it to move first.
+
+    Syntax:
+    engine white|black|stop'

@@ -9,11 +9,14 @@ public class GameMngr : MonoBehaviour
     public PieceHandler pieceHandler;
     public SpaceHandler spaceHandler;
     public BoardCreation boardCreation;
+    public ConsoleBehaviour console;
     public bool boardExists = false;
     public bool dragAndDropRespectsTurns;
     public GameObject cursor;
 
     public bool boardFlipped;
+
+    public bool gameOver;
 
     //sehr dumm bitte ändern
     public bool theoIsBlack;
@@ -45,6 +48,8 @@ public class GameMngr : MonoBehaviour
     public Engine theo;
     [HideInInspector]
     public UnityEvent moveMade = new UnityEvent();
+    [HideInInspector]
+    public UnityEvent gameEnd = new UnityEvent();
 
     //TODO make this a singleton
 
@@ -53,6 +58,7 @@ public class GameMngr : MonoBehaviour
         moveGenerator = new MoveGenerator();
         ChessBoard test = new ChessBoard();
         moveMade.AddListener(OnMove);
+        gameEnd.AddListener(OnGameOver);
     }
 
     void Start()
@@ -71,6 +77,7 @@ public class GameMngr : MonoBehaviour
 
     void OnMove()
     {
+        if (gameOver) return;
         if (theoIsBlack && playerOnTurn == ChessBoard.black)
         {
             var theosMove = theo.ChooseRandomMove(playerOnTurn);
@@ -82,8 +89,24 @@ public class GameMngr : MonoBehaviour
         }
     }
 
+    void OnGameOver()
+    {
+        console.Print("Game over.");
+        string playerStr = (playerOnTurn == ChessBoard.white) ? "White" : "Black";
+        if (moveGenerator.IsPlayerInCheck(playerOnTurn))
+        {
+
+            console.Print(playerStr + " is checkmate. Type restart to reset board.");
+        }
+        else
+        {
+            console.Print(playerStr + " can't move any more, this is a draw. Type restart to reset board.");
+        }
+    }
+
     public void MakeMoveNoGraphics(int start, int end)
     {
+        if (gameOver) return;
         lastMove = moveGenerator.MovePiece(start, end);
         if (lastMove.Count == 5) // Castling!
         {
@@ -98,6 +121,7 @@ public class GameMngr : MonoBehaviour
 
     public void MakeMove(int start, int end)
     {
+        if (gameOver) return;
         if (pieceHandler.GetPieceAtPos(end) != null)
         {
             pieceHandler.DisablePiece(end);
@@ -108,6 +132,7 @@ public class GameMngr : MonoBehaviour
 
     public void MakeMoveAnimated(int start, int end)
     {
+        if (gameOver) return;
         if (pieceHandler.GetPieceAtPos(end) != null)
         {
             pieceHandler.DisablePiece(end);
@@ -186,9 +211,11 @@ public class GameMngr : MonoBehaviour
         spaceHandler.HighlightMoveList(attackedSpacesWhite, Color.green, 0.25f);
     }
 
-    void StartChessGame()
+    public void StartChessGame()
     {
         LoadPosition(startingPosString);
+        theoIsBlack = false;
+        theoIsWhite = false;
     }
 
     public void LoadPosition(string fen)
@@ -196,6 +223,7 @@ public class GameMngr : MonoBehaviour
         pieceHandler.ClearBoard();
         spaceHandler.UnHighlightAll();
         moveGenerator.LoadFEN(fen);
+        gameOver = false;
         playerOnTurn = moveGenerator.gameData.playerOnTurn;
         pieceHandler.LayOutPieces(moveGenerator.board);
         /*for (int i = 0; i < 12; i++)

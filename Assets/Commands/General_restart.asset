@@ -9,8 +9,8 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c28c9a4d88572314998043a843d4f33c, type: 3}
-  m_Name: General_flip
+  m_Script: {fileID: 11500000, guid: f7779d514190c7c44b5526eb8937ee59, type: 3}
+  m_Name: General_restart
   m_EditorClassIdentifier: 
-  commandString: flip
-  helpString: Flips the board.
+  commandString: restart
+  helpString: Puts all the pieces back to their starting position.

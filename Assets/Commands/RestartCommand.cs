@@ -2,8 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "New Random Move Command", menuName = "Commands/Random Move")]
-public class RandomMoveCommand : ConsoleCommand
+[CreateAssetMenu(fileName = "New Restart Command", menuName = "Commands/Restart")]
+public class RestartCommand : ConsoleCommand
 {
     GameMngr manager;
     ConsoleBehaviour console;
@@ -16,11 +16,8 @@ public class RandomMoveCommand : ConsoleCommand
     //runs on command execution
     public override bool Action(string[] args)
     {
-        Move move = manager.theo.ChooseRandomMove(manager.playerOnTurn);
-        if (move.Start == 0 && move.End == 0) return false;
-        console.Print("Made move " + manager.moveGenerator.MoveName(move.Start, move.End, true) + ".");
-        manager.MakeMoveAnimated(move.Start, move.End);
+        manager.StartChessGame();
+        console.Print("Restarting game.");
         return true;
     }
 }
-

@@ -17,40 +17,40 @@ public struct Move
 
 public class Engine
 {
+    GameMngr manager;
     MoveGenerator moveGenerator;
+    ChessBoard board;
     int possibleMoveCount;
     public int originalDepth;
-    public Engine(MoveGenerator boardToPlayAt)
+
+    int[] pieceValues = new int[] { 100, 300, 300, 500, 900 };
+
+    public Engine(MoveGenerator moveGenToUse)
     {
-        moveGenerator = boardToPlayAt;
+        moveGenerator = moveGenToUse;
+        manager = GameObject.FindGameObjectWithTag("Manager").GetComponent<GameMngr>();
+        board = moveGenerator.board;
     }
 
-    public float EvalPosition(int[] position)
+    public int EvalPosition()
     {
-        float output = 0;
+        int output = 0;
         return output;
     }
 
-    public float EvalPosition()
+    public Move ChooseMove(int player, int depth)
     {
-        float output = 0;
-        return output;
-    }
-
-    void Search()
-    {
-
-    }
-
-    public Move ChooseDumbMove(int player)
-    {
-        var allMoves = GetMoveset(player);
-        return allMoves[0];
+        return new Move(0, 0, 0);
     }
 
     public Move ChooseRandomMove(int player)
     {
         var allMoves = GetMoveset(player);
+        if (allMoves.Count == 0) //checkmate or draw 
+        {
+            manager.gameEnd.Invoke();
+            return new Move(0, 0, 0);
+        }
         int moveIndex = Random.Range(0, allMoves.Count);
         return allMoves[moveIndex];
     }
