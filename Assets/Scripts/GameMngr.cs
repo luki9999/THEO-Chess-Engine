@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
@@ -24,6 +25,9 @@ public class GameMngr : MonoBehaviour
     public int engineDepth;
 
     public int playerOnTurn;
+
+    [HideInInspector] public List<List<int[]>> moveHistory;
+
     public float moveAnimationTime;
 
     public int perftTestDepth;
@@ -64,6 +68,7 @@ public class GameMngr : MonoBehaviour
 
     void Start()
     {
+        moveHistory = new List<List<int[]>>();
         boardCreation.creationFinished.AddListener(OnBoardFinished);
     }
 
@@ -76,8 +81,18 @@ public class GameMngr : MonoBehaviour
         //MakeMoveAnimated(4, 1, 4, 3);
     }
 
+    public void UndoLastMove()
+    {
+        if (moveHistory.Count == 0) return;
+        moveGenerator.UndoMovePiece(moveHistory.Last());
+        moveHistory.RemoveAt(moveHistory.Count - 1);
+        pieceHandler.ReloadPieces();
+        playerOnTurn = (playerOnTurn == ChessBoard.white) ? ChessBoard.black : ChessBoard.white;
+    }
+
     void OnMove()
     {
+        moveHistory.Add(lastMove);
         if (gameOver) return;
         if (theoIsBlack && playerOnTurn == ChessBoard.black)
         {
@@ -258,6 +273,7 @@ public class GameMngr : MonoBehaviour
         spaceHandler.UnHighlightAll();
         moveGenerator.LoadFEN(fen);
         gameOver = false;
+        moveHistory = new List<List<int[]>>();
         playerOnTurn = moveGenerator.gameData.playerOnTurn;
         pieceHandler.LayOutPieces(moveGenerator.board);
         /*for (int i = 0; i < 12; i++)

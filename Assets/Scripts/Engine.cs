@@ -48,10 +48,12 @@ public class Engine
 
     readonly int[] pieceValues = new int[] {0, 100, 300, 300, 500, 900, 0};
 
-    readonly int[] pawnBonusSpaces = new int[] { 27, 28, 35, 36 };
-
-    const int pawnBonus = 20;
     const int checkBonus = 50;
+
+    const int endgameThreshold = 2 * 500 + 2 * 300;
+
+    const int positiveInfinity = 9999999;
+    const int negativeInfinity = -positiveInfinity;
 
     public Engine(MoveGenerator moveGenToUse)
     {
@@ -66,7 +68,7 @@ public class Engine
         return (player == ChessBoard.white) ? ChessBoard.black : ChessBoard.white;
     }
 
-    public int MaterialValue()
+    int MaterialValue()
     {
         int output = 0;
         for (int i = 0; i < 64; i++)
@@ -79,24 +81,37 @@ public class Engine
         return output;
     }
 
+    int BonusValue()
+    {
+        int output = 0;
+        bool endgame = MaterialValue() < endgameThreshold;
+        foreach (int piece in ChessBoard.possiblePieces)
+        {
+            foreach (int space in moveGenerator.board.FindPieces(piece))
+            {
+                int colorSign = ChessBoard.PieceColor(piece) == ChessBoard.black ? -1 : 1;
+                int spaceValue = PieceBonusTable.Read(piece, space, endgame);
+                output += spaceValue * colorSign;
+            }
+        }
+        return output;
+    }
+
+
+
     public int EvalPosition(int player)
     {
         int eval = MaterialValue();
         if (moveGenerator.IsPlayerInCheck(ChessBoard.white)) eval -= checkBonus;
         if (moveGenerator.IsPlayerInCheck(ChessBoard.black)) eval += checkBonus;
-        foreach (int i in pawnBonusSpaces)
-        {
-            if (ChessBoard.PieceType(moveGenerator.board[i]) == ChessBoard.pawn) 
-            {
-                eval += (ChessBoard.PieceColor(moveGenerator.board[i]) == ChessBoard.white) ? pawnBonus : -pawnBonus;
-            }
-        }
+        eval += BonusValue();
+
         return (player == ChessBoard.white) ? eval : -eval;
     }
 
      
 
-    public int Search(int player, int depth)
+    public int Search(int player, int depth, int alpha, int beta)
     {
         if (depth == 0) return EvalPosition(player);
         List<Move> moves = GetMoveset(player);
@@ -106,37 +121,45 @@ public class Engine
             return 0; // draw
         }
 
-        int bestEval = -1000;
-
         foreach (Move move in moves)
         {
-            var currentMoveName = moveGenerator.MoveName(move.Start, move.End);
             var madeMove = moveGenerator.MovePiece(move.Start, move.End);
-            int eval = -Search(OtherPlayer(player), depth - 1);
+            int eval = -Search(OtherPlayer(player), depth - 1, -beta, -alpha);
+            moveGenerator.UndoMovePiece(madeMove);
             searchCount++;
-            if (Mathf.Max(eval, bestEval) != bestEval)
+
+
+
+            if (eval > alpha)
             { //found new best move
-                bestEval = Mathf.Max(eval, bestEval);
+               alpha = eval;
+               //Debug.Log("neues alpha: " + maxValue.ToString());
                if (depth == originalDepth)//dont forget to set this in wrapper
                {
                     currentBestMove = move;
-                    currentSearch.currentBestMove = currentMoveName; // usable for displaying in console
+
+                    currentSearch.currentBestMove = moveGenerator.MoveName(move.Start, move.End); // usable for displaying in console
                     currentSearch.currentSearchCount = searchCount;
-                    currentSearch.currentBestEval = bestEval;
+                    currentSearch.currentBestEval = alpha;
                     currentSearch.valuesChanged = true;
                }
+               if (eval >= beta) //prune the branch
+               {
+                    return beta;
+               }
             }
-            moveGenerator.UndoMovePiece(madeMove);
+            
         }
 
-        return bestEval;
+        return alpha;
     }
+
 
     public Move ChooseMove(int player, int depth)
     {
         originalDepth = depth; //important
         searchCount = 0;
-        Search(player, depth);
+        Search(player, depth, negativeInfinity, positiveInfinity);
         currentSearch.currentSearchCount = searchCount;
         currentSearch.valuesChanged = true;
         return currentBestMove;

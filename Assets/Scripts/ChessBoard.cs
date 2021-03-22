@@ -255,6 +255,17 @@ public class ChessBoard
         return piecePositionBoards[BitBoardIndex(piece)][space];
     }
 
+    public List<int> FindPieces(int piece) //returns list of spaces where the piece is
+    {
+        var output = new List<int>();
+        int index = BitBoardIndex(piece);
+        for (int i = 0; i < 64; i++)
+        {
+            if (piecePositionBoards[index][i]) output.Add(i);
+        }
+        return output;
+    }
+
     //methods
 
     public void UpdateFullSpaces()

@@ -1342,7 +1342,7 @@ MonoBehaviour:
       m_Calls: []
   m_FontData:
     m_Font: {fileID: 12800000, guid: b8767722e4cf7224890e83ac0c749f0f, type: 3}
-    m_FontSize: 18
+    m_FontSize: 16
     m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 0
@@ -2952,6 +2952,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: a9e2f048977f50a43b4759c640194854, type: 2}
   - {fileID: 11400000, guid: b83fa75a9ca60dd4b8aa0c83a9551fe8, type: 2}
   - {fileID: 11400000, guid: f030d4bdcfd6415419ed6d8737833493, type: 2}
+  - {fileID: 11400000, guid: cb58034953e38f04cbf19c8cbf14d1a2, type: 2}
+  - {fileID: 11400000, guid: a7c84154d4cb74541b8f8a00cff072ac, type: 2}
   inputUI: {fileID: 420004694}
   outputUI: {fileID: 845803998}
 --- !u!1 &1476746548

@@ -2,8 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "__New Command__", menuName = "Commands/__TEMPLATE, DONT USE__")]
-public class __CommandName__ : ConsoleCommand
+[CreateAssetMenu(fileName = "New Undo Command", menuName = "Commands/Undo")]
+public class UndoCommand : ConsoleCommand
 {
     GameMngr manager;
     ConsoleBehaviour console;
@@ -16,6 +16,8 @@ public class __CommandName__ : ConsoleCommand
     //runs on command execution
     public override bool Action(string[] args)
     {
+        manager.UndoLastMove();
+        console.Print("Last move was taken back.");
         return true;
     }
 }

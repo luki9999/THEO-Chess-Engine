@@ -2,8 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "__New Command__", menuName = "Commands/__TEMPLATE, DONT USE__")]
-public class __CommandName__ : ConsoleCommand
+[CreateAssetMenu(fileName = "New Reload Command", menuName = "Commands/Reload")]
+public class ReloadCommand : ConsoleCommand
 {
     GameMngr manager;
     ConsoleBehaviour console;
@@ -16,6 +16,8 @@ public class __CommandName__ : ConsoleCommand
     //runs on command execution
     public override bool Action(string[] args)
     {
+        manager.pieceHandler.ReloadPieces();
+        console.Print("Reloading piece positions.");
         return true;
     }
 }
