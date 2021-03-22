@@ -76,6 +76,13 @@ public class ConsoleBehaviour : MonoBehaviour
         outputUI.text += "\n" + line;
     }
 
+    public void ReplaceLast(string line)
+    {
+        var splitText = outputUI.text.Split( '\n');
+        splitText[splitText.Length-1] = line;
+        outputUI.text = string.Join("\n", splitText);
+    }
+
     public void Clear()
     {
         outputUI.text = "";

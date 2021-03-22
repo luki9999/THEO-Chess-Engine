@@ -250,6 +250,13 @@ public class ChessBoard
         return piecePositionBoards[index].CountActive();
     }
 
+    public bool Contains(int space, int piece)
+    {
+        return piecePositionBoards[BitBoardIndex(piece)][space];
+    }
+
+    //methods
+
     public void UpdateFullSpaces()
     {
         for (int i = 0; i < 12; i++)

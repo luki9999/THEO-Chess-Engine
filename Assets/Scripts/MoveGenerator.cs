@@ -93,7 +93,7 @@ public class MoveGenerator
     {
         board = FENHandler.ReadFEN(fenNotation);
         gameData = FENHandler.GameDataFromFEN(fenNotation);
-        //SetAttackedSpaceData();
+        SetAttackedSpaceData();
         SetKingPositions();
     }
 
@@ -278,30 +278,26 @@ public class MoveGenerator
 
     void SetAttackedSpaceData()
     {
-        for (int player = 0; player < 2; player++)
-        {
-            if (player == ChessBoard.black)
-            {
-                isSpaceAttackedByBlack = GenerateAttackedSpaceBitboard(ChessBoard.black);
-            }
-            else if (player == ChessBoard.white)
-            {
-                isSpaceAttackedByWhite = GenerateAttackedSpaceBitboard(ChessBoard.white);
-            }
-        }
+        isSpaceAttackedByBlack = GenerateAttackedSpaceBitboard(ChessBoard.black);
+        isSpaceAttackedByWhite = GenerateAttackedSpaceBitboard(ChessBoard.white);
     }
 
     void SetKingPositions()
     {
         for (int i = 0; i < 64; i++)
         {
-            if (board.piecePositionBoards[ChessBoard.king - 1 + 6][i])
+            if (board.Contains(i, ChessBoard.blackPiece | ChessBoard.king))
             {
                 blackKingPosition = i;
+                break;
             }
-            else if (board.piecePositionBoards[ChessBoard.king - 1][i])
+        }
+        for (int i = 0; i < 64; i++) // looks bad, but breaking the loop after finding the kings should be faster
+        {
+            if (board.Contains(i, ChessBoard.whitePiece | ChessBoard.king))
             {
                 whiteKingPosition = i;
+                break;
             }
         }
     }
@@ -330,17 +326,18 @@ public class MoveGenerator
         {
             var attackedSpaces = GetAttackedSpaces(player ^ 1);
             var castlingSpaces = new int[] { 5 + 8 * castlingRow, 6 + 8 * castlingRow, 2 + 8 * castlingRow, 3 + 8 * castlingRow, 1 + 8 * castlingRow };
-            if (gameData.castling[2 * player])
+            bool castlingPossible = !IsPlayerInCheck(player);
+            if (gameData.castling[2 * player] && castlingPossible)
             {
                 shortCastlingValid = true;
                 for (int i = 0; i < 2; i++) // short castling
                 {
-                    if (board[castlingSpaces[i]] != 0) shortCastlingValid = false;
-                    if (attackedSpaces.Contains(castlingSpaces[i])) shortCastlingValid = false;
+                    if (board[castlingSpaces[i]] != 0) shortCastlingValid = false; //cant castle is pieces are in the way
+                    if (attackedSpaces.Contains(castlingSpaces[i])) shortCastlingValid = false; //cant castle through check
                 }
                 if (shortCastlingValid) possibleSpaces.Add(space + 2);
             }
-            if (gameData.castling[2 * player + 1])
+            if (gameData.castling[2 * player + 1] && castlingPossible)
             {
                 longCastlingValid = true;
                 if (board[castlingSpaces[4]] != 0) longCastlingValid = false;
@@ -423,18 +420,18 @@ public class MoveGenerator
             }
             foreach (int index in new int[] { castlingIndex, castlingIndex + 1 })
             {
+                if(gameData.castling[index]) previousPositions[0][index] = 1;
                 gameData.castling[index] = false;
-                previousPositions[0][index] = 1;
             }
         }
         else if (currentPieceType == ChessBoard.rook)
         { // piece is a rook
-            if (ChessBoard.SpaceX(start) == 7)
+            if (ChessBoard.SpaceX(start) == 7 && gameData.castling[castlingIndex])
             {
                 gameData.castling[castlingIndex] = false;
                 previousPositions[0][castlingIndex] = 1;
             }
-            else if (ChessBoard.SpaceX(start) == 0)
+            else if (ChessBoard.SpaceX(start) == 0 && gameData.castling[castlingIndex])
             {
                 gameData.castling[castlingIndex + 1] = false;
                 previousPositions[0][castlingIndex + 1] = 1;
@@ -449,6 +446,15 @@ public class MoveGenerator
                 board[spaceToTake] = 0;
             }
         }
+        if (board.Contains(end, ChessBoard.whitePiece | ChessBoard.rook))
+        {
+            gameData.castling[castlingIndex] = !(end == 7) & gameData.castling[castlingIndex];
+            gameData.castling[castlingIndex+1] = !(end == 0) & gameData.castling[castlingIndex+1];
+        } else if(board.Contains(end, ChessBoard.blackPiece | ChessBoard.rook))
+        {
+            gameData.castling[castlingIndex] = !(end == 63) & gameData.castling[castlingIndex];
+            gameData.castling[castlingIndex+1] = !(end == 56) & gameData.castling[castlingIndex + 1];
+        }
         //leave that like this! dont put it the if clause up there. IT WILL BREAK
         previousPositions[0][4] = gameData.epSpace;
         if (Mathf.Abs(start / 8 - end / 8) == 2 && currentPieceType == ChessBoard.pawn)
@@ -461,11 +467,11 @@ public class MoveGenerator
         }
         board[end] = board[start];
         board[start] = 0; // Making the actual move
-        if (end / 8 == 7 && currentPieceType == ChessBoard.pawn)
+        if (ChessBoard.SpaceY(end) == 7 && currentPieceType == ChessBoard.pawn)
         {
             board[end] = ChessBoard.whitePiece + ChessBoard.queen; // White pawn becomes white queen
         }
-        else if (end / 8 == 0 && currentPieceType == ChessBoard.pawn)
+        else if (ChessBoard.SpaceY(end) == 0 && currentPieceType == ChessBoard.pawn)
         {
             board[end] = ChessBoard.blackPiece + ChessBoard.queen; // Black pawn becomes black queen
         }

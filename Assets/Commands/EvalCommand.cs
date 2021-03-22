@@ -16,7 +16,7 @@ public class EvalCommand : ConsoleCommand
     //runs on command execution
     public override bool Action(string[] args)
     {
-        int evalValue = manager.theo.EvalPosition(manager.playerOnTurn);
+        int evalValue = manager.engine.EvalPosition(manager.playerOnTurn);
         console.Print("Current evaluation: " + evalValue.ToString());
         return true;
     }

@@ -17,20 +17,36 @@ public struct Move
     }
 }
 
+public struct SearchData
+{
+    public int currentSearchCount;
+    public int currentBestEval;
+    public string currentBestMove;
+    public bool valuesChanged;
+
+    public SearchData(int currentSearchCount, int currentBestEval, string currentBestMove)
+    {
+        this.currentSearchCount = currentSearchCount;
+        this.currentBestEval = currentBestEval;
+        this.currentBestMove = currentBestMove;
+        valuesChanged = false;
+    }
+}
+
 public class Engine
 {
     GameMngr manager;
     MoveGenerator moveGenerator;
-    ChessBoard board;
     ConsoleBehaviour console;
     int possibleMoveCount;
     public int originalDepth;
-
-    [HideInInspector]
+    public int searchCount;
     public bool moveReady = false;
+    public SearchData currentSearch;
+    Move currentBestMove;
     public Move nextFoundMove;
 
-    readonly int[] pieceValues = new int[] { 100, 300, 300, 500, 900, 0 };
+    readonly int[] pieceValues = new int[] {0, 100, 300, 300, 500, 900, 0};
 
     readonly int[] pawnBonusSpaces = new int[] { 27, 28, 35, 36 };
 
@@ -41,8 +57,8 @@ public class Engine
     {
         moveGenerator = moveGenToUse;
         manager = GameObject.FindGameObjectWithTag("Manager").GetComponent<GameMngr>();
-        board = moveGenerator.board;
         console = manager.console;
+        currentSearch = new SearchData(0, 0, "");
     }
 
     public static int OtherPlayer(int player)
@@ -53,11 +69,12 @@ public class Engine
     public int MaterialValue()
     {
         int output = 0;
-        for (int i = 0; i < 12; i++)
+        for (int i = 0; i < 64; i++)
         {
-            int currentPiece = ChessBoard.possiblePieces[i];
-            int currentValue = pieceValues[ChessBoard.PieceType(currentPiece) - 1];
-            output += (ChessBoard.PieceColor(currentPiece) == ChessBoard.white) ? board.PieceCount(currentPiece) * currentValue : -board.PieceCount(currentPiece) * currentValue;
+            int currentPiece = moveGenerator.board[i];
+            int valueSign = (ChessBoard.PieceColor(currentPiece) == ChessBoard.white) ? 1 : -1;
+            int currentValue = pieceValues[ChessBoard.PieceType(currentPiece)] * valueSign;
+            output += currentValue;
         }
         return output;
     }
@@ -65,13 +82,13 @@ public class Engine
     public int EvalPosition(int player)
     {
         int eval = MaterialValue();
-        if (moveGenerator.IsPlayerInCheck(player)) eval -= checkBonus;
-        if (moveGenerator.IsPlayerInCheck(OtherPlayer(player))) eval += checkBonus;
+        if (moveGenerator.IsPlayerInCheck(ChessBoard.white)) eval -= checkBonus;
+        if (moveGenerator.IsPlayerInCheck(ChessBoard.black)) eval += checkBonus;
         foreach (int i in pawnBonusSpaces)
         {
-            if (ChessBoard.PieceType(board[i]) == ChessBoard.pawn && ChessBoard.PieceColor(board[i]) == player) 
+            if (ChessBoard.PieceType(moveGenerator.board[i]) == ChessBoard.pawn) 
             {
-                eval += pawnBonus;
+                eval += (ChessBoard.PieceColor(moveGenerator.board[i]) == ChessBoard.white) ? pawnBonus : -pawnBonus;
             }
         }
         return (player == ChessBoard.white) ? eval : -eval;
@@ -93,11 +110,21 @@ public class Engine
 
         foreach (Move move in moves)
         {
+            var currentMoveName = moveGenerator.MoveName(move.Start, move.End);
             var madeMove = moveGenerator.MovePiece(move.Start, move.End);
             int eval = -Search(OtherPlayer(player), depth - 1);
+            searchCount++;
             if (Mathf.Max(eval, bestEval) != bestEval)
             { //found new best move
                 bestEval = Mathf.Max(eval, bestEval);
+               if (depth == originalDepth)//dont forget to set this in wrapper
+               {
+                    currentBestMove = move;
+                    currentSearch.currentBestMove = currentMoveName; // usable for displaying in console
+                    currentSearch.currentSearchCount = searchCount;
+                    currentSearch.currentBestEval = bestEval;
+                    currentSearch.valuesChanged = true;
+               }
             }
             moveGenerator.UndoMovePiece(madeMove);
         }
@@ -107,23 +134,12 @@ public class Engine
 
     public Move ChooseMove(int player, int depth)
     {
-        Move bestMove = new Move(0,0,0);
-        var possibleMoves = GetMoveset(player);
-        int bestEval = -10000;
-        foreach (Move move in possibleMoves)
-        {
-            string moveName = moveGenerator.MoveName(move.Start, move.End);
-            var madeMove = moveGenerator.MovePiece(move.Start, move.End);
-            int eval = -Search(OtherPlayer(player), depth - 1);
-            if (Mathf.Max(eval, bestEval) != bestEval)
-            { //found new best move
-                bestEval = Mathf.Max(eval, bestEval);
-                bestMove = move;
-            }
-            Debug.Log(moveName + " " + eval.ToString());
-            moveGenerator.UndoMovePiece(madeMove);
-        }
-        return bestMove;
+        originalDepth = depth; //important
+        searchCount = 0;
+        Search(player, depth);
+        currentSearch.currentSearchCount = searchCount;
+        currentSearch.valuesChanged = true;
+        return currentBestMove;
     }
 
     public void ThreadedMove()

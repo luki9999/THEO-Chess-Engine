@@ -21,7 +21,7 @@ public class DisplayMovesCommand : ConsoleCommand
         }
         manager.spaceHandler.UnHighlightAll();
         int player = (args[0] == "white") ? ChessBoard.white : ChessBoard.black;
-        List<Move> possibleMoves = manager.theo.GetMoveset(player);
+        List<Move> possibleMoves = manager.engine.GetMoveset(player);
         List<int> alreadyHighlightedSpaces = new List<int>();
         List<int> alreadyHighlightedPieces = new List<int>();
         foreach (Move move in possibleMoves)

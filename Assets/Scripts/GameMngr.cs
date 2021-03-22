@@ -46,7 +46,7 @@ public class GameMngr : MonoBehaviour
 
 
     List<int[]> lastMove;
-    public Engine theo;
+    public Engine engine;
     [HideInInspector]
     public UnityEvent moveMade = new UnityEvent();
     [HideInInspector]
@@ -72,7 +72,7 @@ public class GameMngr : MonoBehaviour
         boardExists = true;
         StartChessGame();
         
-        theo = new Engine(moveGenerator);
+        engine = new Engine(moveGenerator);
         //MakeMoveAnimated(4, 1, 4, 3);
     }
 
@@ -81,10 +81,10 @@ public class GameMngr : MonoBehaviour
         if (gameOver) return;
         if (theoIsBlack && playerOnTurn == ChessBoard.black)
         {
-            theo.ThreadedMove();
+            engine.ThreadedMove();
         } else if (theoIsWhite && playerOnTurn == ChessBoard.white)
         {
-            theo.ThreadedMove();
+            engine.ThreadedMove();
         }
     }
 
@@ -114,6 +114,13 @@ public class GameMngr : MonoBehaviour
         {
             pieceHandler.DisablePiece(lastMove[3][0]);
         }
+        if (lastMove[1][1] == (ChessBoard.whitePiece | ChessBoard.pawn) && ChessBoard.SpaceY(lastMove[2][0]) == 7) //white pawn becoming queen
+        {
+            pieceHandler.ChangePieceToQueen(lastMove[2][0], ChessBoard.white);
+        } else if (lastMove[1][1] == (ChessBoard.blackPiece | ChessBoard.pawn) && ChessBoard.SpaceY(lastMove[2][0]) == 7) //black pawn becoming queen
+        {
+            pieceHandler.ChangePieceToQueen(lastMove[2][0], ChessBoard.black);
+        }
         playerOnTurn = (playerOnTurn == ChessBoard.white) ? ChessBoard.black : ChessBoard.white;
         moveMade.Invoke();
     }
@@ -138,6 +145,14 @@ public class GameMngr : MonoBehaviour
         }
         MakeMoveNoGraphics(start, end);
         pieceHandler.MovePieceSpriteAnimated(start, end, moveAnimationTime);
+        if (lastMove[1][1] == (ChessBoard.whitePiece | ChessBoard.pawn) && ChessBoard.SpaceY(lastMove[2][0]) == 7) //white pawn becoming queen
+        {
+            pieceHandler.LayOutPieces(moveGenerator.board);
+        }
+        else if (lastMove[1][1] == (ChessBoard.blackPiece | ChessBoard.pawn) && ChessBoard.SpaceY(lastMove[2][0]) == 7) //black pawn becoming queen
+        {
+            pieceHandler.LayOutPieces(moveGenerator.board);
+        }
     }
 
     public void MakeMoveFromString(string moveString)
@@ -151,16 +166,24 @@ public class GameMngr : MonoBehaviour
     void Update()
     {
         if (!cursor.activeSelf) cursor.SetActive(true);
-        if (theo.moveReady) 
+        if (engine.currentSearch.valuesChanged)
+        {
+            console.ReplaceLast(engine.currentSearch.currentBestMove.PadRight(6)
+                + "| Eval: " + engine.currentSearch.currentBestEval.ToString().PadRight(8) 
+                + "| Count: " + engine.currentSearch.currentSearchCount.ToString().PadRight(12));
+            engine.currentSearch.valuesChanged = false;
+        }
+        if (engine.moveReady)
         {
             OnEngineMoveReady();
-            theo.moveReady = false;
+            if (theoIsBlack || theoIsWhite) console.Print("");
+            engine.moveReady = false;
         }
     }
 
     void OnEngineMoveReady()
     {
-        MakeMoveAnimated(theo.nextFoundMove.Start, theo.nextFoundMove.End);
+        MakeMoveAnimated(engine.nextFoundMove.Start, engine.nextFoundMove.End);
     }
 
     public void MoveGenerationTest(int piece)
@@ -252,9 +275,9 @@ public class GameMngr : MonoBehaviour
     {
         for (int i = 1; i <= perftTestDepth; i++)
         {
-            theo.originalDepth = i;
+            engine.originalDepth = i;
             float startTime = Time.realtimeSinceStartup;
-            int moveCount = theo.MoveGenCountTest(i, playerOnTurn);
+            int moveCount = engine.MoveGenCountTest(i, playerOnTurn);
             float timeElapsed = Time.realtimeSinceStartup - startTime;
             print("Found " + moveCount.ToString("N0") + " moves with depth " + i.ToString());
             print("It took " + timeElapsed.ToString() + " seconds.");

@@ -16,7 +16,8 @@ public class RandomMoveCommand : ConsoleCommand
     //runs on command execution
     public override bool Action(string[] args)
     {
-        manager.theo.ThreadedMove();
+        manager.engine.ThreadedMove();
+        console.Print("------");
         return true;
     }
 }

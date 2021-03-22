@@ -26,9 +26,9 @@ public class PerftCommand : ConsoleCommand
             return false;
         }
 
-        manager.theo.originalDepth = perftTestDepth;
+        manager.engine.originalDepth = perftTestDepth;
         float startTime = Time.realtimeSinceStartup;
-        int moveCount = manager.theo.MoveGenCountTest(perftTestDepth, manager.playerOnTurn, false, console);
+        int moveCount = manager.engine.MoveGenCountTest(perftTestDepth, manager.playerOnTurn, false, console);
         float timeElapsed = Time.realtimeSinceStartup - startTime;
         console.Print("Found " + moveCount.ToString("N0") + " moves with depth " + perftTestDepth.ToString());
         console.Print("It took " + timeElapsed.ToString() + " seconds.");
