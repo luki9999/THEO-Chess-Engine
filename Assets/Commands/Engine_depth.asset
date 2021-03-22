@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ef866a2ca1dafc44eaa79d7084462bbb, type: 3}
   m_Name: Engine_depth
   m_EditorClassIdentifier: 
-  commandString: 
-  helpString: 
+  commandString: depth
+  helpString: "Sets or displays engine depth. \n"

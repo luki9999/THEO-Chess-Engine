@@ -147,10 +147,12 @@ public class GameMngr : MonoBehaviour
         pieceHandler.MovePieceSpriteAnimated(start, end, moveAnimationTime);
         if (lastMove[1][1] == (ChessBoard.whitePiece | ChessBoard.pawn) && ChessBoard.SpaceY(lastMove[2][0]) == 7) //white pawn becoming queen
         {
+            pieceHandler.ClearBoard();
             pieceHandler.LayOutPieces(moveGenerator.board);
         }
         else if (lastMove[1][1] == (ChessBoard.blackPiece | ChessBoard.pawn) && ChessBoard.SpaceY(lastMove[2][0]) == 7) //black pawn becoming queen
         {
+            pieceHandler.ClearBoard();
             pieceHandler.LayOutPieces(moveGenerator.board);
         }
     }
