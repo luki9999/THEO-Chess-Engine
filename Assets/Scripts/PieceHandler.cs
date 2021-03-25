@@ -173,9 +173,16 @@ public class PieceHandler : MonoBehaviour
     }
 
     public void ChangePieceToQueen(int position, int color)
-    {
-        if (color == 0) ChangePieceSprite(position, pieceObjects[10].GetComponent<SpriteRenderer>().sprite);
-        else ChangePieceSprite(position, pieceObjects[4].GetComponent<SpriteRenderer>().sprite);
+    {//PLEASE FOR THE LOVE OF GOD CHANGE THAT AGAIN
+        try
+        {
+            if (color == 0) ChangePieceSprite(position, pieceObjects[10].GetComponent<SpriteRenderer>().sprite);
+            else ChangePieceSprite(position, pieceObjects[4].GetComponent<SpriteRenderer>().sprite);
+        }
+        catch (System.NullReferenceException)
+        {
+            ReloadPieces();
+        }
     }
 
     public void ChangePieceToQueen(GameObject piece, int color)

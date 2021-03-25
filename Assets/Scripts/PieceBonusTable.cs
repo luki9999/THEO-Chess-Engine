@@ -16,7 +16,6 @@ public static class PieceBonusTable
 
 		int tableIndex = ChessBoard.PieceType(piece) - 1;
 		if (endgame && ChessBoard.PieceType(piece) == ChessBoard.king) tableIndex = 6;
-
 		return bonusTables[tableIndex][square];
 	}
 
@@ -82,8 +81,8 @@ public static class PieceBonusTable
 			-30,-40,-40,-50,-50,-40,-40,-30,
 			-20,-30,-30,-40,-40,-30,-30,-20,
 			-10,-20,-20,-20,-20,-20,-20,-10,
-			20, 20,  0,  0,  0,  0, 20, 20,
-			20, 30, 10,  0,  0, 10, 30, 20
+			10, 10,  0,  0,  0,  0, 10, 10,
+			20, 40,  5,  0,  0,  5, 40, 20
 		};
 
 	public static readonly int[] kingEnd = {
@@ -97,5 +96,5 @@ public static class PieceBonusTable
 			-50,-30,-30,-30,-30,-30,-30,-50
 		};
 
-	public static readonly int[][] bonusTables = { pawns, knights, bishops, rooks, queens, kingEnd, kingMiddle	};
+	public static readonly int[][] bonusTables = { pawns, knights, bishops, rooks, queens, kingMiddle, kingEnd };
 }

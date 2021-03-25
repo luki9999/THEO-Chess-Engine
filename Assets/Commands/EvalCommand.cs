@@ -16,8 +16,16 @@ public class EvalCommand : ConsoleCommand
     //runs on command execution
     public override bool Action(string[] args)
     {
-        int evalValue = manager.engine.EvalPosition(manager.playerOnTurn);
-        console.Print("Current evaluation: " + evalValue.ToString());
+        if (args.Length != 0 && args[0] == "search")
+        {
+            console.Print("------");
+            manager.engine.ThreadedSearch();
+        }
+        else
+        {
+            int evalValue = manager.engine.EvalPosition(manager.playerOnTurn);
+            console.Print("Current static evaluation: " + evalValue.ToString());
+        }
         return true;
     }
 }

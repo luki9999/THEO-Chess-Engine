@@ -27,6 +27,7 @@ public class GameMngr : MonoBehaviour
     public int playerOnTurn;
 
     [HideInInspector] public List<List<int[]>> moveHistory;
+    [SerializeField] public List<ulong> positionHistory;
 
     public float moveAnimationTime;
 
@@ -69,6 +70,7 @@ public class GameMngr : MonoBehaviour
     void Start()
     {
         moveHistory = new List<List<int[]>>();
+        positionHistory = new List<ulong>();
         boardCreation.creationFinished.AddListener(OnBoardFinished);
     }
 
@@ -86,6 +88,7 @@ public class GameMngr : MonoBehaviour
         if (moveHistory.Count == 0) return;
         moveGenerator.UndoMovePiece(moveHistory.Last());
         moveHistory.RemoveAt(moveHistory.Count - 1);
+        positionHistory.RemoveAt(positionHistory.Count - 1);
         pieceHandler.ReloadPieces();
         playerOnTurn = (playerOnTurn == ChessBoard.white) ? ChessBoard.black : ChessBoard.white;
     }
@@ -93,6 +96,7 @@ public class GameMngr : MonoBehaviour
     void OnMove()
     {
         moveHistory.Add(lastMove);
+        positionHistory.Add(moveGenerator.board.Hash());
         if (gameOver) return;
         if (theoIsBlack && playerOnTurn == ChessBoard.black)
         {
@@ -196,6 +200,11 @@ public class GameMngr : MonoBehaviour
             if (theoIsBlack || theoIsWhite) console.Print("");
             engine.moveReady = false;
         }
+        if (engine.evalReady)
+        {
+            console.Print("Searched Eval: " + engine.currentSearch.currentBestEval.ToString());
+            engine.evalReady = false;
+        }
     }
 
     void OnEngineMoveReady()
@@ -274,6 +283,7 @@ public class GameMngr : MonoBehaviour
         moveGenerator.LoadFEN(fen);
         gameOver = false;
         moveHistory = new List<List<int[]>>();
+        positionHistory = new List<ulong>() { moveGenerator.board.Hash() };
         playerOnTurn = moveGenerator.gameData.playerOnTurn;
         pieceHandler.LayOutPieces(moveGenerator.board);
         /*for (int i = 0; i < 12; i++)

@@ -9,8 +9,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9284f44c57053414ebcecaadcfe5559d, type: 3}
-  m_Name: Engine_eval
+  m_Script: {fileID: 11500000, guid: 858e02c241d516d43acfafcbba7aff6d, type: 3}
+  m_Name: Movegen_showcaptures
   m_EditorClassIdentifier: 
-  commandString: eval
-  helpString: Evaluates the current position. eval search to run search.
+  commandString: showcaptures
+  helpString: 'Shows possible captures.
+
+    Syntax: showcaptures white|black'
