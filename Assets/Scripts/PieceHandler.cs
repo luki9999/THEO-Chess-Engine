@@ -179,6 +179,7 @@ public class PieceHandler : MonoBehaviour
             pieceToMove.transform.position = Vector3.Lerp(spaceHandler.ChessSpaceToWorldSpace(oldSpace), spaceHandler.ChessSpaceToWorldSpace(newSpace), (Time.time - startTime) / animTime);
             yield return 0;
         }
+        pieceToMove.transform.position = spaceHandler.ChessSpaceToWorldSpace(newSpace); //this prevents a bug only arising in the built version, no idea why i have to do this but so be it
     }
 
     public void MovePieceSpriteAnimated(int oldSpace, int newSpace, float animTime)
