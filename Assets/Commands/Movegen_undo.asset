@@ -9,9 +9,8 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e3e106c0781c7e34fa91fd55fd903a83, type: 3}
-  m_Name: Engine_engine
+  m_Script: {fileID: 11500000, guid: 655540bd558629e47ba5c0020bdd77b1, type: 3}
+  m_Name: Movegen_undo
   m_EditorClassIdentifier: 
-  commandString: engine
-  helpString: "Makes the engine play a certain side. \nUse go to force it to move
-    first.\nSyntax: engine white|black|stop"
+  commandString: undo
+  helpString: Takes the last move back.

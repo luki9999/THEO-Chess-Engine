@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using UnityEngine; //just for Debug.Log, remove eventually
 using System;
 
-
+[Serializable]
 public class BitBoard
 {
-    ulong boardInt;
+    [SerializeField]ulong boardInt;
 
 
     public BitBoard(ulong newBoardInt = 0)
@@ -29,6 +29,11 @@ public class BitBoard
     public static explicit operator BitBoard(ulong input)
     {
         return new BitBoard(input);
+    }
+
+    public static explicit operator ulong(BitBoard input)
+    {
+        return input.boardInt;
     }
 
     public bool this[int index]
@@ -88,6 +93,7 @@ public class BitBoard
     }
 }
 
+[Serializable]
 public class ChessBoard
 {
     public BitBoard[] piecePositionBoards; //white pawns, white knights, white bishops, white rooks, white queens, white kings, after that same for black
@@ -108,20 +114,15 @@ public class ChessBoard
     public static readonly char[] fileLetters = new char[] { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h' };
     public static readonly char[] rankNumbers = new char[] { '1', '2', '3', '4', '5', '6', '7', '8' };
 
-    static BitBoard whiteSpaces;
+    static readonly BitBoard whiteSpaces = (BitBoard)0b10101010_01010101_10101010_01010101_10101010_01010101_10101010_01010101;
 
     public ChessBoard()
     {
         piecePositionBoards = new BitBoard[12];
-        whiteSpaces = new BitBoard();
         fullSpaces = new BitBoard();
         for (int i = 0; i < 12; i++)
         {
             piecePositionBoards[i] = new BitBoard();
-        }
-        for (int i = 0; i < 64; i++)
-        {
-            whiteSpaces[i] = ((SpaceX(i) + SpaceY(i)) % 2 == 0);
         }
         //remove this once you are using the new stuff
         //SomeTests();
@@ -138,6 +139,14 @@ public class ChessBoard
             }
         }
         return true;
+    }
+
+    public ChessBoard Copy()
+    {
+        var output = new ChessBoard();
+        output.piecePositionBoards = piecePositionBoards;
+        output.fullSpaces = fullSpaces;
+        return output;
     }
 
     public int this[int index]
@@ -180,6 +189,19 @@ public class ChessBoard
         }
     }
 
+    public ulong Hash()
+    {
+        ulong cutoffSum = 0, bitboardSum = 0;
+        for (int i = 0; i < 12; i++)
+        {
+            ulong currentBoardInt = (ulong)piecePositionBoards[i];
+            ulong currentCutoff = currentBoardInt & (ulong)0b11;
+            bitboardSum += currentBoardInt >> 2;
+            cutoffSum &= currentCutoff << (2 * i);
+        }
+        return bitboardSum + cutoffSum;
+    }
+
     //some getters
     public static int PieceColor(int piece)
     {
@@ -213,6 +235,13 @@ public class ChessBoard
     public static int SpaceY(int space)
     {
         return space / 8;
+    }
+
+    public static int Distance(int start, int end)
+    {
+        int deltaX = Math.Abs(SpaceX(end) - SpaceX(start));
+        int deltaY = Math.Abs(SpaceY(end) - SpaceY(start));
+        return Math.Max(deltaY, deltaX);
     }
 
     public static string SpaceName(int space)
@@ -250,9 +279,40 @@ public class ChessBoard
         return piecePositionBoards[index].CountActive();
     }
 
+    public int WhitePieceCount()
+    {
+        BitBoard whitePieces = new BitBoard();
+        for (int i = 0; i < 6; i++)
+        {
+            whitePieces += piecePositionBoards[i];
+        }
+        return whitePieces.CountActive();
+    }
+
+    public int BlackPieceCount()
+    {
+        BitBoard blackPieces = new BitBoard();
+        for (int i = 6; i < 12; i++)
+        {
+            blackPieces += piecePositionBoards[i];
+        }
+        return blackPieces.CountActive();
+    }
+
     public bool Contains(int space, int piece)
     {
         return piecePositionBoards[BitBoardIndex(piece)][space];
+    }
+
+    public List<int> FindPieces(int piece) //returns list of spaces where the piece is
+    {
+        var output = new List<int>();
+        int index = BitBoardIndex(piece);
+        for (int i = 0; i < 64; i++)
+        {
+            if (piecePositionBoards[index][i]) output.Add(i);
+        }
+        return output;
     }
 
     //methods
@@ -261,10 +321,39 @@ public class ChessBoard
     {
         for (int i = 0; i < 12; i++)
         {
-            fullSpaces += piecePositionBoards[1];
+            fullSpaces += piecePositionBoards[i];
         }
     }
 
+    public void MovePieceToEmptySpace(int start, int end, int piece)
+    {
+        piecePositionBoards[BitBoardIndex(piece)][start] = false;
+        fullSpaces[start] = false;
+        piecePositionBoards[BitBoardIndex(piece)][end] = true;
+        fullSpaces[end] = true;
+    }
+
+    public void MovePieceToFullSpace(int start, int end, int piece, int takenPiece)
+    {
+        piecePositionBoards[BitBoardIndex(takenPiece)][end] = false;
+        piecePositionBoards[BitBoardIndex(piece)][start] = false;
+        fullSpaces[start] = false;
+        piecePositionBoards[BitBoardIndex(piece)][end] = true; // no need to update full spaces at end, there will still be a piece
+    }
+
+    public void TurnPawnToQueen(int pos, int color)
+    {
+        piecePositionBoards[queen - 1 + (6 * color)][pos] = true; //queen = true
+        piecePositionBoards[6 * color][pos] = false; //pawn = false
+        //fullSpaces[pos] = true; 
+    }
+    
+    public int TakeEPPawn(int pos, int color)
+    {
+        piecePositionBoards[-6*(color-1)][(-8 + 16 * color) + pos] = false; // 6 for white (black pawn), 0 for black (white pawn) and -8 for white, 8 for black 
+        fullSpaces[(-8 + 16 * color) + pos] = false;
+        return (-8 + 16 * color) + pos;
+    }
     //tests and shit
 
     void SomeTests()

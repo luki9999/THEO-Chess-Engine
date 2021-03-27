@@ -67,8 +67,11 @@ public class ConsoleBehaviour : MonoBehaviour
             console.ParseCommandLine(input);
             lastInput = input;
             inputUI.text = string.Empty;
-        } 
-        inputUI.ActivateInputField();
+        }
+        if (Application.platform != RuntimePlatform.Android)
+        {
+            inputUI.ActivateInputField();
+        }
     }
 
     public void Print(string line)

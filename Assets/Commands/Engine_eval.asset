@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: Engine_eval
   m_EditorClassIdentifier: 
   commandString: eval
-  helpString: Evaluates the current position.
+  helpString: Evaluates the current position. eval search to run search.
