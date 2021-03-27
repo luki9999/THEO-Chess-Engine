@@ -1,7 +1,16 @@
 using System.Collections;
+using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
+using static ChessBoard;
+
+public enum GameState
+{
+    Running,
+    Mate,
+    Draw
+}
 
 public class GameMngr : MonoBehaviour
 {
@@ -21,8 +30,15 @@ public class GameMngr : MonoBehaviour
     //sehr dumm bitte ändern
     public bool theoIsBlack;
     public bool theoIsWhite;
+    public int engineDepth;
 
     public int playerOnTurn;
+
+    [HideInInspector] public List<List<int[]>> moveHistory;
+    [SerializeField] public List<ulong> positionHistory;
+
+    public GameState currentState;
+
     public float moveAnimationTime;
 
     public int perftTestDepth;
@@ -45,11 +61,13 @@ public class GameMngr : MonoBehaviour
 
 
     List<int[]> lastMove;
-    public Engine theo;
+    public Engine engine;
     [HideInInspector]
     public UnityEvent moveMade = new UnityEvent();
     [HideInInspector]
     public UnityEvent gameEnd = new UnityEvent();
+
+    readonly int[] players = new int[] { white, black };
 
     //TODO make this a singleton
 
@@ -63,6 +81,8 @@ public class GameMngr : MonoBehaviour
 
     void Start()
     {
+        moveHistory = new List<List<int[]>>();
+        positionHistory = new List<ulong>();
         boardCreation.creationFinished.AddListener(OnBoardFinished);
     }
 
@@ -71,28 +91,44 @@ public class GameMngr : MonoBehaviour
         boardExists = true;
         StartChessGame();
         
-        theo = new Engine(moveGenerator);
+        engine = new Engine(moveGenerator);
         //MakeMoveAnimated(4, 1, 4, 3);
+    }
+
+    public void UndoLastMove()
+    {
+        if (moveHistory.Count == 0) return;
+        moveGenerator.UndoMovePiece(moveHistory.Last());
+        moveHistory.RemoveAt(moveHistory.Count - 1);
+        positionHistory.RemoveAt(positionHistory.Count - 1);
+        pieceHandler.ReloadPieces();
+        playerOnTurn = (playerOnTurn == white) ? black : white;
     }
 
     void OnMove()
     {
+        currentState = CurrentState();
+        moveHistory.Add(lastMove);
+        positionHistory.Add(moveGenerator.board.Hash());
+        if(currentState == GameState.Mate || currentState == GameState.Draw)
+        {
+            gameEnd.Invoke();
+            gameOver = true;
+        }
         if (gameOver) return;
-        if (theoIsBlack && playerOnTurn == ChessBoard.black)
+        if (theoIsBlack && playerOnTurn == black)
         {
-            var theosMove = theo.ChooseRandomMove(playerOnTurn);
-            MakeMoveAnimated(theosMove.Start, theosMove.End);
-        } else if (theoIsWhite && playerOnTurn == ChessBoard.white)
+            engine.ThreadedMove();
+        } else if (theoIsWhite && playerOnTurn == white)
         {
-            var theosMove = theo.ChooseRandomMove(playerOnTurn);
-            MakeMoveAnimated(theosMove.Start, theosMove.End);
+            engine.ThreadedMove();
         }
     }
 
     void OnGameOver()
     {
         console.Print("Game over.");
-        string playerStr = (playerOnTurn == ChessBoard.white) ? "White" : "Black";
+        string playerStr = (playerOnTurn == white) ? "White" : "Black";
         if (moveGenerator.IsPlayerInCheck(playerOnTurn))
         {
 
@@ -115,7 +151,7 @@ public class GameMngr : MonoBehaviour
         {
             pieceHandler.DisablePiece(lastMove[3][0]);
         }
-        playerOnTurn = (playerOnTurn == ChessBoard.white) ? ChessBoard.black : ChessBoard.white;
+        playerOnTurn = (playerOnTurn == white) ? black : white;
         moveMade.Invoke();
     }
 
@@ -146,12 +182,47 @@ public class GameMngr : MonoBehaviour
         //TODO error handling
         string startString = moveString.Substring(0, 2);
         string endString = moveString.Substring(2, 2);
-        MakeMove(ChessBoard.SpaceNumberFromString(startString), ChessBoard.SpaceNumberFromString(endString));
+        MakeMove(SpaceNumberFromString(startString), SpaceNumberFromString(endString));
+    }
+
+    public GameState CurrentState()
+    {
+        //TODO add all the other posibilities for draws (50 moves, repetition...)
+        List<Move> moveset = engine.GetMoveset(playerOnTurn);
+        if(moveset.Count == 0)
+        {
+            if (moveGenerator.IsPlayerInCheck(playerOnTurn)) return GameState.Mate;
+            else return GameState.Draw;
+        }
+        return GameState.Running;
     }
 
     void Update()
     {
         if (!cursor.activeSelf) cursor.SetActive(true);
+        if (engine.currentSearch.valuesChanged)
+        {
+            console.ReplaceLast(engine.currentSearch.currentBestMove.PadRight(6)
+                + "| Eval: " + engine.currentSearch.currentBestEval.ToString().PadRight(8) 
+                + "| Count: " + engine.currentSearch.currentSearchCount.ToString().PadRight(12));
+            engine.currentSearch.valuesChanged = false;
+        }
+        if (engine.moveReady)
+        {
+            OnEngineMoveReady();
+            if (theoIsBlack || theoIsWhite) console.Print("");
+            engine.moveReady = false;
+        }
+        if (engine.evalReady)
+        {
+            console.Print("Searched Eval: " + engine.currentSearch.currentBestEval.ToString());
+            engine.evalReady = false;
+        }
+    }
+
+    void OnEngineMoveReady()
+    {
+        MakeMoveAnimated(engine.nextFoundMove.Start, engine.nextFoundMove.End);
     }
 
     public void MoveGenerationTest(int piece)
@@ -224,6 +295,8 @@ public class GameMngr : MonoBehaviour
         spaceHandler.UnHighlightAll();
         moveGenerator.LoadFEN(fen);
         gameOver = false;
+        moveHistory = new List<List<int[]>>();
+        positionHistory = new List<ulong>() { moveGenerator.board.Hash() };
         playerOnTurn = moveGenerator.gameData.playerOnTurn;
         pieceHandler.LayOutPieces(moveGenerator.board);
         /*for (int i = 0; i < 12; i++)
@@ -243,9 +316,9 @@ public class GameMngr : MonoBehaviour
     {
         for (int i = 1; i <= perftTestDepth; i++)
         {
-            theo.originalDepth = i;
+            engine.originalDepth = i;
             float startTime = Time.realtimeSinceStartup;
-            int moveCount = theo.MoveGenCountTest(i, playerOnTurn);
+            int moveCount = engine.MoveGenCountTest(i, playerOnTurn);
             float timeElapsed = Time.realtimeSinceStartup - startTime;
             print("Found " + moveCount.ToString("N0") + " moves with depth " + i.ToString());
             print("It took " + timeElapsed.ToString() + " seconds.");

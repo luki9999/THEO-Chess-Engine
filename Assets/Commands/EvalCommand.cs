@@ -2,8 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "New Random Move Command", menuName = "Commands/Random Move")]
-public class RandomMoveCommand : ConsoleCommand
+[CreateAssetMenu(fileName = "New Eval Command", menuName = "Commands/Evaluate")]
+public class EvalCommand : ConsoleCommand
 {
     GameMngr manager;
     ConsoleBehaviour console;
@@ -16,9 +16,16 @@ public class RandomMoveCommand : ConsoleCommand
     //runs on command execution
     public override bool Action(string[] args)
     {
-        manager.engine.ThreadedMove();
-        console.Print("------");
+        if (args.Length != 0 && args[0] == "search")
+        {
+            console.Print("------");
+            manager.engine.ThreadedSearch();
+        }
+        else
+        {
+            int evalValue = manager.engine.EvalPosition(manager.playerOnTurn);
+            console.Print("Current static evaluation: " + evalValue.ToString());
+        }
         return true;
     }
 }
-

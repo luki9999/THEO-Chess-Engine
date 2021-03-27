@@ -13,7 +13,5 @@ MonoBehaviour:
   m_Name: Engine_engine
   m_EditorClassIdentifier: 
   commandString: engine
-  helpString: 'Makes the engine play a certain side. Use go to force it to move first.
-
-    Syntax:
-    engine white|black|stop'
+  helpString: "Makes the engine play a certain side. \nUse go to force it to move
+    first.\nSyntax: engine white|black|stop"

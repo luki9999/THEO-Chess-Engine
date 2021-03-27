@@ -9,8 +9,8 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d47dfbdc55129c1478f1cdde98152170, type: 3}
-  m_Name: Engine_go
+  m_Script: {fileID: 11500000, guid: 655540bd558629e47ba5c0020bdd77b1, type: 3}
+  m_Name: Movegen_undo
   m_EditorClassIdentifier: 
-  commandString: go
-  helpString: Searches and makes a move for the player currenly on turn.
+  commandString: undo
+  helpString: Takes the last move back.

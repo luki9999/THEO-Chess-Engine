@@ -31,7 +31,7 @@ public class EngineCommand : ConsoleCommand
             return false; 
         }
         string enginePlayer = manager.theoIsWhite ? "white" : (manager.theoIsBlack ? "black" : "invalid");
-        console.Print("The engine plays " + enginePlayer + " now. Use go to force it to move first.");
+        console.Print("The engine plays " + enginePlayer + " now. Use go to force it to move first.\n");
         return true;
     }
 }
