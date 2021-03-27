@@ -67,13 +67,23 @@ public class ConsoleBehaviour : MonoBehaviour
             console.ParseCommandLine(input);
             lastInput = input;
             inputUI.text = string.Empty;
-        } 
-        inputUI.ActivateInputField();
+        }
+        if (Application.platform != RuntimePlatform.Android)
+        {
+            inputUI.ActivateInputField();
+        }
     }
 
     public void Print(string line)
     {
         outputUI.text += "\n" + line;
+    }
+
+    public void ReplaceLast(string line)
+    {
+        var splitText = outputUI.text.Split( '\n');
+        splitText[splitText.Length-1] = line;
+        outputUI.text = string.Join("\n", splitText);
     }
 
     public void Clear()

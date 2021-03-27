@@ -1,0 +1,22 @@
+fileFormatVersion: 2
+guid: b8767722e4cf7224890e83ac0c749f0f
+TrueTypeFontImporter:
+  externalObjects: {}
+  serializedVersion: 4
+  fontSize: 16
+  forceTextureCase: -2
+  characterSpacing: 0
+  characterPadding: 1
+  includeFontData: 1
+  fontNames:
+  - Sono
+  fallbackFontReferences:
+  - {fileID: 12800000, guid: a23aaecbfd022b64a8bb610e8b069633, type: 3}
+  customCharacters: 
+  fontRenderingMode: 0
+  ascentCalculationMode: 1
+  useLegacyBoundsCalculation: 0
+  shouldRoundAdvanceValue: 1
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

@@ -7,6 +7,15 @@ public class SpaceHandler : MonoBehaviour
     public BoardCreation boardCreation;
     public GameMngr manager;
 
+    float thisX;
+    float thisY;
+
+    public void Awake()
+    {
+        thisX = transform.position.x;
+        thisY = transform.position.y;
+    }
+
     public static int FlipIndex(int index)
     {
         return 63 - index;
@@ -17,14 +26,14 @@ public class SpaceHandler : MonoBehaviour
         if (manager.boardFlipped) space = FlipIndex(space);
         int x = ChessBoard.SpaceX(space);
         int y = ChessBoard.SpaceY(space);
-        return new Vector3(-3.5f + x + transform.position.x, -3.5f + y + transform.position.y, 0);
+        return new Vector3(-3.5f + x + thisX, -3.5f + y + thisY, 0);
     }
 
     public int WorldSpaceToChessSpace(Vector2 koords)
     {
         int space = -1;
-        int x = Mathf.RoundToInt(koords.x + 3.5f - transform.position.x);
-        int y = Mathf.RoundToInt(koords.y + 3.5f - transform.position.y);
+        int x = Mathf.RoundToInt(koords.x + 3.5f - thisX);
+        int y = Mathf.RoundToInt(koords.y + 3.5f - thisY);
         if (0 <= x && x < 8 && 0 <= y && y < 8) space = x + 8 * y;
         if (manager.boardFlipped) space = FlipIndex(space);
         return space;

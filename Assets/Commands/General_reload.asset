@@ -9,8 +9,8 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d47dfbdc55129c1478f1cdde98152170, type: 3}
-  m_Name: Engine_go
+  m_Script: {fileID: 11500000, guid: ba22fd752b2170d4798f5bb1f47a3581, type: 3}
+  m_Name: General_reload
   m_EditorClassIdentifier: 
-  commandString: go
-  helpString: Searches and makes a move for the player currenly on turn.
+  commandString: reload
+  helpString: Reloads piece positions.

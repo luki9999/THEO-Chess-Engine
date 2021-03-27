@@ -2,8 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "New Random Move Command", menuName = "Commands/Random Move")]
-public class RandomMoveCommand : ConsoleCommand
+[CreateAssetMenu(fileName = "New Reload Command", menuName = "Commands/Reload")]
+public class ReloadCommand : ConsoleCommand
 {
     GameMngr manager;
     ConsoleBehaviour console;
@@ -16,9 +16,8 @@ public class RandomMoveCommand : ConsoleCommand
     //runs on command execution
     public override bool Action(string[] args)
     {
-        manager.engine.ThreadedMove();
-        console.Print("------");
+        manager.pieceHandler.ReloadPieces();
+        console.Print("Reloading piece positions.");
         return true;
     }
 }
-
