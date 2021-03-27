@@ -343,9 +343,9 @@ public class ChessBoard
 
     public void TurnPawnToQueen(int pos, int color)
     {
-        piecePositionBoards[queen - 1 + (6 * color)][pos] = true;
-        piecePositionBoards[6 * color][pos] = false;
-        fullSpaces[pos] = true;
+        piecePositionBoards[queen - 1 + (6 * color)][pos] = true; //queen = true
+        piecePositionBoards[6 * color][pos] = false; //pawn = false
+        //fullSpaces[pos] = true; 
     }
     
     public int TakeEPPawn(int pos, int color)

@@ -315,7 +315,7 @@ MonoBehaviour:
   boardCreation: {fileID: 1972327882}
   console: {fileID: 1476730448}
   boardExists: 0
-  dragAndDropRespectsTurns: 0
+  dragAndDropRespectsTurns: 1
   cursor: {fileID: 1229894327}
   boardFlipped: 0
   gameOver: 0
@@ -324,6 +324,7 @@ MonoBehaviour:
   engineDepth: 4
   playerOnTurn: 0
   positionHistory: 
+  currentState: 0
   moveAnimationTime: 0.3
   perftTestDepth: 4
   moveMade:

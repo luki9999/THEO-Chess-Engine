@@ -3,6 +3,14 @@ using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
+using static ChessBoard;
+
+public enum GameState
+{
+    Running,
+    Mate,
+    Draw
+}
 
 public class GameMngr : MonoBehaviour
 {
@@ -28,6 +36,8 @@ public class GameMngr : MonoBehaviour
 
     [HideInInspector] public List<List<int[]>> moveHistory;
     [SerializeField] public List<ulong> positionHistory;
+
+    public GameState currentState;
 
     public float moveAnimationTime;
 
@@ -56,6 +66,8 @@ public class GameMngr : MonoBehaviour
     public UnityEvent moveMade = new UnityEvent();
     [HideInInspector]
     public UnityEvent gameEnd = new UnityEvent();
+
+    readonly int[] players = new int[] { white, black };
 
     //TODO make this a singleton
 
@@ -90,18 +102,24 @@ public class GameMngr : MonoBehaviour
         moveHistory.RemoveAt(moveHistory.Count - 1);
         positionHistory.RemoveAt(positionHistory.Count - 1);
         pieceHandler.ReloadPieces();
-        playerOnTurn = (playerOnTurn == ChessBoard.white) ? ChessBoard.black : ChessBoard.white;
+        playerOnTurn = (playerOnTurn == white) ? black : white;
     }
 
     void OnMove()
     {
+        currentState = CurrentState();
         moveHistory.Add(lastMove);
         positionHistory.Add(moveGenerator.board.Hash());
+        if(currentState == GameState.Mate || currentState == GameState.Draw)
+        {
+            gameEnd.Invoke();
+            gameOver = true;
+        }
         if (gameOver) return;
-        if (theoIsBlack && playerOnTurn == ChessBoard.black)
+        if (theoIsBlack && playerOnTurn == black)
         {
             engine.ThreadedMove();
-        } else if (theoIsWhite && playerOnTurn == ChessBoard.white)
+        } else if (theoIsWhite && playerOnTurn == white)
         {
             engine.ThreadedMove();
         }
@@ -110,7 +128,7 @@ public class GameMngr : MonoBehaviour
     void OnGameOver()
     {
         console.Print("Game over.");
-        string playerStr = (playerOnTurn == ChessBoard.white) ? "White" : "Black";
+        string playerStr = (playerOnTurn == white) ? "White" : "Black";
         if (moveGenerator.IsPlayerInCheck(playerOnTurn))
         {
 
@@ -133,14 +151,7 @@ public class GameMngr : MonoBehaviour
         {
             pieceHandler.DisablePiece(lastMove[3][0]);
         }
-        if (lastMove[1][1] == (ChessBoard.whitePiece | ChessBoard.pawn) && ChessBoard.SpaceY(lastMove[2][0]) == 7) //white pawn becoming queen
-        {
-            pieceHandler.ChangePieceToQueen(lastMove[2][0], ChessBoard.white);
-        } else if (lastMove[1][1] == (ChessBoard.blackPiece | ChessBoard.pawn) && ChessBoard.SpaceY(lastMove[2][0]) == 7) //black pawn becoming queen
-        {
-            pieceHandler.ChangePieceToQueen(lastMove[2][0], ChessBoard.black);
-        }
-        playerOnTurn = (playerOnTurn == ChessBoard.white) ? ChessBoard.black : ChessBoard.white;
+        playerOnTurn = (playerOnTurn == white) ? black : white;
         moveMade.Invoke();
     }
 
@@ -164,16 +175,6 @@ public class GameMngr : MonoBehaviour
         }
         MakeMoveNoGraphics(start, end);
         pieceHandler.MovePieceSpriteAnimated(start, end, moveAnimationTime);
-        if (lastMove[1][1] == (ChessBoard.whitePiece | ChessBoard.pawn) && ChessBoard.SpaceY(lastMove[2][0]) == 7) //white pawn becoming queen
-        {
-            pieceHandler.ClearBoard();
-            pieceHandler.LayOutPieces(moveGenerator.board);
-        }
-        else if (lastMove[1][1] == (ChessBoard.blackPiece | ChessBoard.pawn) && ChessBoard.SpaceY(lastMove[2][0]) == 7) //black pawn becoming queen
-        {
-            pieceHandler.ClearBoard();
-            pieceHandler.LayOutPieces(moveGenerator.board);
-        }
     }
 
     public void MakeMoveFromString(string moveString)
@@ -181,7 +182,19 @@ public class GameMngr : MonoBehaviour
         //TODO error handling
         string startString = moveString.Substring(0, 2);
         string endString = moveString.Substring(2, 2);
-        MakeMove(ChessBoard.SpaceNumberFromString(startString), ChessBoard.SpaceNumberFromString(endString));
+        MakeMove(SpaceNumberFromString(startString), SpaceNumberFromString(endString));
+    }
+
+    public GameState CurrentState()
+    {
+        //TODO add all the other posibilities for draws (50 moves, repetition...)
+        List<Move> moveset = engine.GetMoveset(playerOnTurn);
+        if(moveset.Count == 0)
+        {
+            if (moveGenerator.IsPlayerInCheck(playerOnTurn)) return GameState.Mate;
+            else return GameState.Draw;
+        }
+        return GameState.Running;
     }
 
     void Update()

@@ -586,7 +586,7 @@ public class MoveGenerator
         if ((ChessBoard.SpaceY(end) == 7 || ChessBoard.SpaceY(end) == 0) && type == ChessBoard.pawn) // pawn of own color never will go backwards
         {
             board.TurnPawnToQueen(end, color);
-            board.UpdateFullSpaces(); //for safety, bugs out when i dont
+            //board.UpdateFullSpaces(); //for safety, bugs out when i dont
         }
         //ultra mega super slow
         SetAttackedSpaceData();
