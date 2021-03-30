@@ -67,8 +67,6 @@ public class GameMngr : MonoBehaviour
     [HideInInspector]
     public UnityEvent gameEnd = new UnityEvent();
 
-    readonly int[] players = new int[] { white, black };
-
     //TODO make this a singleton
 
     void Awake()
@@ -252,15 +250,15 @@ public class GameMngr : MonoBehaviour
         if (piece != 1)
         {
             spaceHandler.UnHighlightAll();
-            List<int> possibleMoves = moveGenerator.GetPossibleSpacesForPiece(3+ 3*8);
+            List<int> possibleMoves = moveGenerator.GetPossibleSpacesForPiece(3+ 3*8).GetActive();
             spaceHandler.HighlightMoveList(possibleMoves, Color.cyan, 0.5f);
             spaceHandler.HighlightSpace(27, Color.green, 0.5f);
         }
         else
         {
             spaceHandler.UnHighlightAll();
-            List<int> possibleMoves1 = moveGenerator.GetPossibleSpacesForPiece(3+ 1*8);
-            List<int> possibleMoves2 = moveGenerator.GetPossibleSpacesForPiece(6+ 5*8);
+            List<int> possibleMoves1 = moveGenerator.GetPossibleSpacesForPiece(3+ 1*8).GetActive();
+            List<int> possibleMoves2 = moveGenerator.GetPossibleSpacesForPiece(6+ 5*8).GetActive();
             spaceHandler.HighlightMoveList(possibleMoves1, Color.cyan, 0.5f);
             spaceHandler.HighlightMoveList(possibleMoves2, Color.magenta, 0.5f);
             spaceHandler.HighlightSpace(11, Color.green, 0.5f);
@@ -277,9 +275,9 @@ public class GameMngr : MonoBehaviour
     public void ShowAttackedSpaces()
     {
         spaceHandler.UnHighlightAll();
-        var attackedSpacesBlack = moveGenerator.GetAttackedSpaces(0);
+        var attackedSpacesBlack = moveGenerator.GenerateAttackedSpaceBitboard(black).GetActive();
         spaceHandler.HighlightMoveList(attackedSpacesBlack, Color.red, 0.25f);
-        var attackedSpacesWhite = moveGenerator.GetAttackedSpaces(1);
+        var attackedSpacesWhite = moveGenerator.GenerateAttackedSpaceBitboard(white).GetActive();
         spaceHandler.HighlightMoveList(attackedSpacesWhite, Color.green, 0.25f);
     }
 

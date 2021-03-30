@@ -51,7 +51,7 @@ public class PieceHandler : MonoBehaviour
 
             if (!respectTurn || manager.playerOnTurn == ChessBoard.PieceColor(moveGenerator.board[startSpace])){
 
-                possibleMovesForClickedPiece = moveGenerator.GetLegalMovesForPiece(startSpace);
+                possibleMovesForClickedPiece = moveGenerator.GetLegalMovesForPiece(startSpace).GetActive();
                 spaceHandler.HighlightMoveList(possibleMovesForClickedPiece, Color.cyan, 0.5f);
 
                 transformDelta = selectedPiece.transform.position - cursor.transform.position;

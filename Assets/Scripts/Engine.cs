@@ -283,7 +283,7 @@ public class Engine
             int currentPiece = moveGenerator.board[space];
             if (ChessBoard.PieceColor(currentPiece) == player)
             {
-                foreach (int endSpace in moveGenerator.GetLegalMovesForPiece(space))
+                foreach (int endSpace in moveGenerator.GetLegalMovesForPiece(space).GetActive())
                 {
                     output.Add(new Move(currentPiece, space, endSpace));
                 }
@@ -292,7 +292,7 @@ public class Engine
         return output;
     }
 
-    public List<Move> GetOrderedMoveset(int player)
+    public List<Move> GetOrderedMoveset(int player) // TODO make evalMove function to sort these
     {
         var quiets = new List<Move>();
         var captures = new List<Move>();
@@ -301,29 +301,27 @@ public class Engine
             int currentPiece = moveGenerator.board[space];
             if (ChessBoard.PieceColor(currentPiece) == player)
             {
-                List<int> pieceMoveset = moveGenerator.GetLegalMovesForPiece(space);
-                if (pieceMoveset.Count == 0) continue;
-                foreach (int endSpace in moveGenerator.GetLegalMovesForPiece(space))
+                BitBoard pieceMoveset = moveGenerator.GetLegalMovesForPiece(space);
+                if ((ulong)pieceMoveset == 0) continue;
+                foreach (int endSpace in pieceMoveset.GetActive())
                 {
                     bool capture = moveGenerator.board.fullSpaces[endSpace];
-                    var testMove = moveGenerator.MovePiece(space, endSpace);
+                    //var testMove = moveGenerator.MovePiece(space, endSpace);
                     bool skipMove = manager.positionHistory.Contains(moveGenerator.board.Hash()); //avoids repeated positions completely
-                    int eval = -EvalPosition(player); // that minus is important
-                    moveGenerator.UndoMovePiece(testMove);
+                    //int eval = -EvalPosition(player); // that minus is important
+                    //moveGenerator.UndoMovePiece(testMove);
                     if (skipMove) continue;
                     if (capture)
                     {
-                        captures.Add(new Move(currentPiece, space, endSpace, eval));
+                        captures.Add(new Move(currentPiece, space, endSpace));
                     }
                     else
                     {
-                        quiets.Add(new Move(currentPiece, space, endSpace, eval));
+                        quiets.Add(new Move(currentPiece, space, endSpace));
                     }
                 }
             }
         }
-        captures.Sort(Move.CompareByEval);
-        quiets.Sort(Move.CompareByEval);
         captures.AddRange(quiets);
         return captures;
     }
@@ -336,7 +334,7 @@ public class Engine
             int currentPiece = moveGenerator.board[space];
             if (ChessBoard.PieceColor(currentPiece) == player)
             {
-                foreach (int endSpace in moveGenerator.GetLegalCapturesForPiece(space))
+                foreach (int endSpace in moveGenerator.GetLegalCapturesForPiece(space).GetActive())
                 {
                     output.Add(new Move(currentPiece, space, endSpace));
                 }

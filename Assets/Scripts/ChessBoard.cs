@@ -92,6 +92,19 @@ public class BitBoard
         }
         return count;
     }
+
+    public List<int> GetActive()
+    {
+        var output = new List<int>();
+        ulong currentInt = boardInt;
+        for (int i = 0; i < 64; i++)
+        {
+            if (currentInt == 0) break;
+            if ((currentInt & 1) == 1) output.Add(i);
+            currentInt >>= 1;
+        }
+        return output;
+    }
 }
 
 [Serializable]
@@ -351,7 +364,14 @@ public class ChessBoard
         piecePositionBoards[6 * color][pos] = false; //pawn = false
         //fullSpaces[pos] = true; 
     }
-    
+
+    public void TurnQueenToPawn(int pos, int color) //for undoing promotions
+    {
+        piecePositionBoards[queen - 1 + (6 * color)][pos] = false; 
+        piecePositionBoards[6 * color][pos] = true; 
+        //fullSpaces[pos] = true; 
+    }
+
     public int TakeEPPawn(int pos, int color)
     {
         piecePositionBoards[-6*(color-1)][(-8 + 16 * color) + pos] = false; // 6 for white (black pawn), 0 for black (white pawn) and -8 for white, 8 for black 

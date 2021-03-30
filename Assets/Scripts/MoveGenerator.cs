@@ -24,12 +24,17 @@ public class MoveGenerator
 {
     public ChessBoard board;
 
-    public static readonly int[] slideDirections = new int[] { 8, -8, 1, -1, 9, 7, -7, -9 };
+    public const int shortCastlingWhite = 0, longCastlingWhite = 1, shortCastlingBlack = 2, longCastlingBlack = 3;
+
+    public static readonly int[] rooksBeforeCastling = new int[] { 7, 0, 63, 56 };
+    public static readonly int[] rooksAfterCastling = new int[] { 5, 3, 61, 59 };
+
+    static readonly int[] slideDirections = new int[] { 8, -8, 1, -1, 9, 7, -7, -9 };
     //up, down, right, left, ur, ul, dr, dl
-    public static readonly int[][] pawnDirs = new int[][] { new int[] { 8, 9, 7 }, new int[] { -8, -7, -9} };
-    public static readonly int[][] knightDirs = new int[][] { new int[] { 15, 17 }, new int[] { -15, -17 },new int[] { -6, 10 },new int[] { 6, -10 } };
+    static readonly int[][] pawnDirs = new int[][] { new int[] { 8, 9, 7 }, new int[] { -8, -7, -9} };
+    static readonly int[][] knightDirs = new int[][] { new int[] { 15, 17 }, new int[] { -15, -17 },new int[] { -6, 10 },new int[] { 6, -10 } };
     //up, down, right, left
-    public static int[][] SpacesToEdge;
+    static int[][] SpacesToEdge;
 
     public ChessGameData gameData;
 
@@ -37,6 +42,7 @@ public class MoveGenerator
 
     public int whiteKingPosition;
     public int blackKingPosition;
+
 
     public MoveGenerator()
     {
@@ -60,7 +66,7 @@ public class MoveGenerator
 
     public string MoveName(int startSpace, int endSpace, bool longNotation = false)
     {
-        string output = "";
+        string output;
         if (board[startSpace] == 0) return "Tried to move from empty space";
         int piece = board[startSpace];
         int pieceType = PieceType(piece);
@@ -100,13 +106,13 @@ public class MoveGenerator
     }
 
     //pseudo legal movegen
-    private List<int> GetSlideSpaces(int space, int pieceType, int range = 8)
+    private BitBoard GetSlideSpaces(int space, int pieceType, int range = 8, bool capturesOnly = false)
     {
         int pieceOnNewSpaceColor, newSpace;
         int movingPieceColor = PieceColor(board[space]); 
         int dirStart = (pieceType == bishop) ? 4 : 0;
         int dirEnd = (pieceType == rook) ? 4 : 8;
-        List<int> output = new List<int>();
+        BitBoard output = new BitBoard(0);
         for (int dirIndex = dirStart; dirIndex < dirEnd; dirIndex++)
         {
             for (int i = 0; i < SpacesToEdge[space][dirIndex]; i++)
@@ -118,9 +124,10 @@ public class MoveGenerator
                     break;
                 } else
                 { 
-                    output.Add(newSpace); 
+                    output[newSpace] = true && !capturesOnly; 
                     if (pieceOnNewSpaceColor != -1)
                     {
+                        output[newSpace] = true;
                         break;
                     }
                 } 
@@ -129,43 +136,17 @@ public class MoveGenerator
         return output;
     }
 
-    private List<int> GetSlideCaptures(int space, int pieceType, int range = 8)
-    {
-        int pieceOnNewSpaceColor, newSpace;
-        int movingPieceColor = PieceColor(board[space]);
-        int dirStart = (pieceType == bishop) ? 4 : 0;
-        int dirEnd = (pieceType == rook) ? 4 : 8;
-        List<int> output = new List<int>();
-        for (int dirIndex = dirStart; dirIndex < dirEnd; dirIndex++)
-        {
-            for (int i = 0; i < SpacesToEdge[space][dirIndex]; i++)
-            {
-                newSpace = space + slideDirections[dirIndex] * (i + 1);
-                pieceOnNewSpaceColor = PieceColor(board[newSpace]);
-                if (pieceOnNewSpaceColor == movingPieceColor || (i + 1) > range)
-                {
-                    break;
-                }
-                else if (pieceOnNewSpaceColor != -1)
-                {
-                    output.Add(newSpace);
-                    break;
-                }
-            }
-        }
-        return output;
-    }
 
-    private List<int> GetPawnSpaces(int space)
+    private BitBoard GetPawnSpaces(int space, bool capturesOnly = false)
     {
         int newSpace, newSpacePieceColor, doublePushRow;
-        List<int> output = new List<int>();
+        var output = new BitBoard();
         int pieceColor = PieceColor(board[space]);
         newSpace = space + pawnDirs[pieceColor][0];
         newSpacePieceColor = PieceColor(board[newSpace]);
-        if(newSpacePieceColor == -1)
+        if(newSpacePieceColor == -1 && !capturesOnly)
         {
-            output.Add(newSpace);
+            output[newSpace] = true;
             doublePushRow = (pieceColor == white) ? 1 : 6;
             if (SpaceY(space) == doublePushRow)
             {
@@ -173,39 +154,25 @@ public class MoveGenerator
                 newSpacePieceColor = PieceColor(board[newSpace]);
                 if (newSpacePieceColor == -1)
                 {
-                    output.Add(newSpace);
+                    output[newSpace] = true;
                 }
             }
         }
-        foreach (int possibleCapture in GetSpacesAttackedByPawn(space))
+        foreach (int possibleCapture in GetSpacesAttackedByPawn(space).GetActive())
         {
             if(PieceColor((board[possibleCapture])) == (pieceColor ^ 0b1) || possibleCapture == gameData.epSpace)
             {
-                output.Add(possibleCapture);
-            }
-        }
-        return output;
-    }
-
-    private List<int> GetPawnCaptures(int space)
-    {
-        List<int> output = new List<int>();
-        int pieceColor = PieceColor(board[space]);
-        foreach (int possibleCapture in GetSpacesAttackedByPawn(space))
-        {
-            if (PieceColor((board[possibleCapture])) == (pieceColor ^ 0b1) || possibleCapture == gameData.epSpace)
-            {
-                output.Add(possibleCapture);
+                output[possibleCapture] = true;
             }
         }
         return output;
     }
 
     //useful for finding attacked spaces
-    private List<int> GetSpacesAttackedByPawn(int space)
+    private BitBoard GetSpacesAttackedByPawn(int space)
     {
         int newSpace, newSpacePieceColor;
-        List<int> output = new List<int>();
+        var output = new BitBoard();
         int pieceColor = PieceColor(board[space]);
         for (int dirIndex = 1; dirIndex < 3; dirIndex++)
         {
@@ -215,17 +182,17 @@ public class MoveGenerator
                 newSpacePieceColor = PieceColor(board[newSpace]);
                 if (newSpacePieceColor != pieceColor)
                 {
-                    output.Add(newSpace);
+                    output[newSpace] = true;
                 }
             }
         }
         return output;
     }
 
-    private List<int> GetKnightSpaces(int space)
+    private BitBoard GetKnightSpaces(int space, bool capturesOnly = false)
     {
         int newSpacePieceColor, newSpace, deltaX;
-        List<int> output = new List<int>();
+        var output = new BitBoard();
         int pieceColor = PieceColor(board[space]);
         for (int directionIndex = 0; directionIndex < 4; directionIndex++)
         {
@@ -240,7 +207,7 @@ public class MoveGenerator
                         deltaX = Mathf.Abs(SpaceX(newSpace) - SpaceX(space));
                         if (newSpacePieceColor != pieceColor && (deltaX == 1 || deltaX == 2))
                         {
-                            output.Add(newSpace);
+                            output[newSpace] = ((newSpacePieceColor == -1) && (!capturesOnly)) || (newSpacePieceColor == (pieceColor ^ 1));
                         }
                     }
                 }
@@ -249,109 +216,58 @@ public class MoveGenerator
         return output;
     }
 
-    private List<int> GetKnightCaptures(int space)
-    {
-        int newSpacePieceColor, newSpace, deltaX;
-        List<int> output = new List<int>();
-        int pieceColor = PieceColor(board[space]);
-        for (int directionIndex = 0; directionIndex < 4; directionIndex++)
-        {
-            if (SpacesToEdge[space][directionIndex] >= 2)
-            {
-                for (int i = 0; i < 2; i++)
-                {
-                    newSpace = space + knightDirs[directionIndex][i];
-                    if (newSpace >= 0 && newSpace < 64)
-                    {
-                        newSpacePieceColor = PieceColor(board[newSpace]);
-                        deltaX = Mathf.Abs(SpaceX(newSpace) - SpaceX(space));
-                        if (newSpacePieceColor == (pieceColor ^ 1) && (deltaX == 1 || deltaX == 2))
-                        {
-                            output.Add(newSpace);
-                        }
-                    }
-                }
-            }
-        }
-        return output;
-    }
 
     //completly useless wrappers, kept for completeness
-    private List<int> GetBishopSpaces(int space)
+    private BitBoard GetBishopSpaces(int space)
     {
         return GetSlideSpaces(space, 3);
     }
 
-    private List<int> GetRookSpaces(int space)
+    private BitBoard GetRookSpaces(int space)
     {
         return GetSlideSpaces(space, 4);
     }
 
-    private List<int> GetQueenSpaces(int space)
+    private BitBoard GetQueenSpaces(int space)
     {
         return GetSlideSpaces(space, 5);
     }
 
-    private List<int> GetKingSpaces(int space)
+    private BitBoard GetKingSpaces(int space)
     {
         return GetSlideSpaces(space, 6, 1);
     }
 
-    public List<int> GetPossibleSpacesForPiece(int space)
+    public BitBoard GetPossibleSpacesForPiece(int space, bool possibleCapturesOnly = false)
     {
         int pieceType = PieceType(board[space]);
-        if (pieceType == pawn) return GetPawnSpaces(space);
-        else if (bishop <= pieceType && pieceType <= queen) return GetSlideSpaces(space, pieceType);
-        else if (pieceType == knight) return GetKnightSpaces(space);
-        else if (pieceType == king) return GetSlideSpaces(space, king, 1);
-        else return new List<int>();
-    }
-
-    public List<int> GetPossibleCapturesForPiece(int space)
-    {
-        int pieceType = PieceType(board[space]);
-        if (pieceType == pawn) return GetPawnCaptures(space);
-        else if (bishop <= pieceType && pieceType <= queen) return GetSlideCaptures(space, pieceType);
-        else if (pieceType == knight) return GetKnightCaptures(space);
-        else if (pieceType == king) return GetSlideCaptures(space, king, 1);
-        else return new List<int>();
+        if (pieceType == pawn) return GetPawnSpaces(space, capturesOnly: possibleCapturesOnly);
+        else if (bishop <= pieceType && pieceType <= queen) return GetSlideSpaces(space, pieceType, capturesOnly: possibleCapturesOnly);
+        else if (pieceType == knight) return GetKnightSpaces(space, capturesOnly: possibleCapturesOnly);
+        else if (pieceType == king) return GetSlideSpaces(space, king, range: 1, capturesOnly: possibleCapturesOnly);
+        else return new BitBoard(0);
     }
 
     //legal movegen and prerequisites
 
-    public List<int> GetAttackedSpaces(int player)
+    public BitBoard GenerateAttackedSpaceBitboard(int player)
     {
         int currentPiece;
-        var output = new List<int>();
-        //Maybe you shold make this faster...
-        for (int space = 0; space < 64; space++)
+        var output = new BitBoard();
+        foreach (int space in board.fullSpaces.GetActive())
         {
-            if (board.fullSpaces[space])
+            currentPiece = board[space];
+            if (PieceColor(currentPiece) == player)
             {
-                currentPiece = board[space];
-                if (PieceColor(currentPiece) == player)
+                if (PieceType(currentPiece) == pawn)
                 {
-                    if (PieceType(currentPiece) == pawn)
-                    {
-                        output.AddRange(GetSpacesAttackedByPawn(space));
-                    }
-                    else
-                    {
-                        output.AddRange(GetPossibleSpacesForPiece(space));
-                    }
+                    output += GetSpacesAttackedByPawn(space);
+                }
+                else
+                {
+                    output += GetPossibleSpacesForPiece(space);
                 }
             }
-        }
-        return output;
-    }
-
-    BitBoard GenerateAttackedSpaceBitboard(int player)
-    {
-        var output = new BitBoard();
-        foreach (int attackedSpace in GetAttackedSpaces(player))
-        {
-            //Debug.Log(attackedSpace.ToString() + " is attacked");
-            output[attackedSpace] = true;
         }
         return output;
     }
@@ -387,13 +303,6 @@ public class MoveGenerator
         return (player == white) ? whiteKingPosition : blackKingPosition;
     }
 
-    List<int> PossibleChecks(int player)
-    {
-        List<int> result = GetSlideSpaces(KingPosition(player), queen);
-        result.AddRange(GetKnightSpaces(KingPosition(player)));
-        return result;
-    }
-
     
     public bool IsPlayerInCheck(int player)
     {
@@ -401,22 +310,20 @@ public class MoveGenerator
         return bitboardToCheck[KingPosition(player)];
     }
 
-    public List<int> GetLegalMovesForPiece(int space)
+    public BitBoard GetLegalMovesForPiece(int space)
     {
         //variables
         int piece = board[space];
         int player = PieceColor(piece);
         int pieceType = PieceType(piece);
-        var output = new List<int>();
-        List<int> possibleSpaces = GetPossibleSpacesForPiece(space);
-        List<int> possibleChecks = PossibleChecks(player);
+        var output = GetPossibleSpacesForPiece(space);
 
         //castling
         int castlingRow = (player == black) ? 7 : 0;
         bool shortCastlingValid, longCastlingValid;
         if (pieceType == king && space == castlingRow * 8 + 4)
         {
-            var attackedSpaces = GetAttackedSpaces(player ^ 1);
+            BitBoard attackedSpaces = GenerateAttackedSpaceBitboard(player ^ 1);
             var castlingSpaces = new int[] { 5 + 8 * castlingRow, 6 + 8 * castlingRow, 2 + 8 * castlingRow, 3 + 8 * castlingRow, 1 + 8 * castlingRow };
             bool castlingPossible = !IsPlayerInCheck(player);
             if (gameData.castling[2 * player] && castlingPossible)
@@ -425,10 +332,10 @@ public class MoveGenerator
                 for (int i = 0; i < 2; i++) // short castling
                 {
                     if (board.fullSpaces[castlingSpaces[i]]) shortCastlingValid = false; //cant castle is pieces are in the way
-                    if (attackedSpaces.Contains(castlingSpaces[i])) shortCastlingValid = false; //cant castle through check
+                    if (attackedSpaces[castlingSpaces[i]]) shortCastlingValid = false; //cant castle through check
                     if (!shortCastlingValid) break;
                 }
-                if (shortCastlingValid) possibleSpaces.Add(space + 2);
+                if (shortCastlingValid) output[space + 2] = true;
             }
             if (gameData.castling[2 * player + 1] && castlingPossible)
             {
@@ -438,50 +345,49 @@ public class MoveGenerator
                 {
                     if (!longCastlingValid) break;
                     if (board.fullSpaces[castlingSpaces[i]]) longCastlingValid = false;
-                    if (attackedSpaces.Contains(castlingSpaces[i])) longCastlingValid = false;
+                    if (attackedSpaces[castlingSpaces[i]]) longCastlingValid = false;
                 }
-                if (longCastlingValid) possibleSpaces.Add(space - 2);
+                if (longCastlingValid) output[space - 2] = true;
             }
         }
 
         //checking legality
-        foreach (int newSpace in possibleSpaces)
+        foreach (int newSpace in output.GetActive())
         {
             bool invalidMove = false;
-            var move = MovePiece(space, newSpace);
+            List<int[]> move = MovePiece(space, newSpace);
             if (IsPlayerInCheck(player))
             {
                 invalidMove = true;
             }
             UndoMovePiece(move);
-            if (!invalidMove)
+            if (invalidMove)
             {
-                output.Add(newSpace);
+                output[newSpace] = false;
             }
         }
         //Debug.Log("There were " + output.Count.ToString() + " moves.");
         return output;
     }
 
-    public List<int> GetLegalCapturesForPiece(int space)
+    public BitBoard GetLegalCapturesForPiece(int space)
     {
-        var output = new List<int>();
-        List<int> possibleCaptures = GetPossibleCapturesForPiece(space);
+        BitBoard output = GetPossibleSpacesForPiece(space, true);
         int piece = board[space];
         int player = PieceColor(piece);
         //no need for castling, thats not a capture :D
-        foreach (int newSpace in possibleCaptures)
+        foreach (int newSpace in output.GetActive())
         {
             bool invalidMove = false;
-            var move = MovePiece(space, newSpace);
+            List<int[]> move = MovePiece(space, newSpace);
             if (IsPlayerInCheck(player))
             {
                 invalidMove = true;
             }
             UndoMovePiece(move);
-            if (!invalidMove)
+            if (invalidMove)
             {
-                output.Add(newSpace);
+                output[newSpace] = false;
             }
         }
         return output;
@@ -618,6 +524,8 @@ public class MoveGenerator
         return previousPositions;
     }
 
+
+
     public void UndoMovePiece(List<int[]> prevPos)
     {
         int prevPosCount = prevPos.Count;
@@ -638,6 +546,4 @@ public class MoveGenerator
         //dreckig und langsam
         board.UpdateFullSpaces();
     }
-
-
 }
