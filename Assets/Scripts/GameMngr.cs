@@ -84,6 +84,7 @@ public class GameMngr : MonoBehaviour
         moveHistory = new List<List<int[]>>();
         positionHistory = new List<ulong>();
         boardCreation.creationFinished.AddListener(OnBoardFinished);
+        SpeedTest.TestFunctionSpeed(() => moveGenerator.board[10] = whitePiece | rook, 10000000);
     }
 
     public void OnBoardFinished()

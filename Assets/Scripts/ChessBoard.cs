@@ -44,7 +44,7 @@ public class BitBoard
 
     bool GetBoolAtSpace(int index)
     {
-        return ((boardInt & ((ulong)1 << index)) != 0);
+        return ((boardInt >> index) & 1) == 1;
     }
 
     void SetBoolAtSpace(int index, bool input)
@@ -77,6 +77,7 @@ public class BitBoard
         return string.Join("\n", partArray);
     }
 
+    //this is a bit shitty but oh well...
     public override int GetHashCode()
     {
         return (int)boardInt;
@@ -87,7 +88,7 @@ public class BitBoard
         int count = 0;
         for (int i = 0; i < 64; i++)
         {
-            if (GetBoolAtSpace(i)) count++;
+            count += (int)(boardInt >> i) & 0b1;
         }
         return count;
     }
@@ -141,14 +142,6 @@ public class ChessBoard
         return true;
     }
 
-    public ChessBoard Copy()
-    {
-        var output = new ChessBoard();
-        output.piecePositionBoards = piecePositionBoards;
-        output.fullSpaces = fullSpaces;
-        return output;
-    }
-
     public int this[int index]
     {
         get => GetPieceAtPos(index);
@@ -174,7 +167,7 @@ public class ChessBoard
         throw new IndexOutOfRangeException("Full spaces are not updated correctly or there is a beer bottle on the board.");
     }
 
-    void SetPieceAtPos(int position, int piece)
+    /*void SetPieceAtPos(int position, int piece)
     {
         for (int i = 0; i < 12; i++)
         {
@@ -187,6 +180,15 @@ public class ChessBoard
             piecePositionBoards[pieceIndex][position] = true;
             fullSpaces[position] = true;
         }
+    }*/
+
+    void SetPieceAtPos(int position, int piece)
+    {
+        int prevPiece = GetPieceAtPos(position);
+        if (piece == prevPiece) return; //piece is already there
+        if (prevPiece != 0) piecePositionBoards[BitBoardIndex(prevPiece)][position] = false;
+        if (piece != 0) piecePositionBoards[BitBoardIndex(piece)][position] = true;
+        fullSpaces[position] = (piece != 0);
     }
 
     public ulong Hash()
@@ -229,12 +231,14 @@ public class ChessBoard
 
     public static int SpaceX(int space)
     {
-        return space % 8;
+        //return space % 8; but should be faster
+        return space & 0b111;
     }
 
     public static int SpaceY(int space)
     {
-        return space / 8;
+        //return space / 8; but quicker
+        return space >> 3;
     }
 
     public static int Distance(int start, int end)
