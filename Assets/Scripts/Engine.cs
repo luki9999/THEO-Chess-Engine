@@ -4,13 +4,13 @@ using UnityEngine;
 using System.Threading;
 using UnityEngine.Events;
 
-public struct Move
+public struct EngineMove
 {
     public int Piece;
     public int Start;
     public int End;
     public int Eval;
-    public Move(int piece, int start, int end, int eval = 0)
+    public EngineMove(int piece, int start, int end, int eval = 0)
     {
         Piece = piece;
         Start = start;
@@ -18,7 +18,7 @@ public struct Move
         Eval = eval;
     }
 
-    public static int CompareByEval(Move move1, Move move2)
+    public static int CompareByEval(EngineMove move1, EngineMove move2)
     {
         return move1.Eval.CompareTo(move2.Eval);
     }
@@ -51,8 +51,8 @@ public class Engine
     public bool moveReady = false;
     public bool evalReady = false;
     public SearchData currentSearch;
-    Move currentBestMove;
-    public Move nextFoundMove;
+    EngineMove currentBestMove;
+    public EngineMove nextFoundMove;
 
     readonly int[] pieceValues = new int[] {0, 100, 300, 300, 500, 900, 0};
 
@@ -158,15 +158,15 @@ public class Engine
     {
         searchCount++;
         if (depth == 0) return CaptureSearch(player, alpha, beta);
-        List<Move> moves = GetOrderedMoveset(player);
+        List<EngineMove> moves = GetOrderedMoveset(player);
         if (moves.Count == 0) 
         {
-            if(moveGenerator.IsPlayerInCheck(player)) return -10000; //Checkmate 
+            if(moveGenerator.IsPlayerInCheck(player)) return -10000 + depth; //Checkmate in depth moves, favors earlier checkmate 
             return 0; // draw
         }
-        foreach (Move move in moves)
+        foreach (EngineMove move in moves)
         {
-            var madeMove = moveGenerator.MovePiece(move.Start, move.End);
+            UndoMoveData madeMove = moveGenerator.MovePiece(move.Start, move.End);
             int eval = -Search(player ^ 1, depth - 1, -beta, -alpha);
             moveGenerator.UndoMovePiece(madeMove);
 
@@ -207,11 +207,11 @@ public class Engine
             alpha = eval;
         }
         //searchCount++;
-        List<Move> moves = GetCaptures(player);
+        List<EngineMove> moves = GetCaptures(player);
 
         for (int i = 0; i < moves.Count; i++)
         {
-            var madeMove = moveGenerator.MovePiece(moves[i].Start, moves[i].End);
+            UndoMoveData madeMove = moveGenerator.MovePiece(moves[i].Start, moves[i].End);
             eval = -CaptureSearch(player ^ 1, -beta, -alpha);
             moveGenerator.UndoMovePiece(madeMove);
             if (eval >= beta) //prune the branch
@@ -228,7 +228,7 @@ public class Engine
     }
 
 
-    public Move ChooseMove(int player, int depth)
+    public EngineMove ChooseMove(int player, int depth)
     {
         originalDepth = depth; //important
         searchCount = 0;
@@ -263,21 +263,21 @@ public class Engine
         evalReady = true;
     }
 
-    public Move ChooseRandomMove(int player)
+    public EngineMove ChooseRandomMove(int player)
     {
         var allMoves = GetMoveset(player);
         if (allMoves.Count == 0) //checkmate or draw 
         {
             manager.gameEnd.Invoke();
-            return new Move(0, 0, 0);
+            return new EngineMove(0, 0, 0);
         }
         int moveIndex = Random.Range(0, allMoves.Count);
         return allMoves[moveIndex];
     }
 
-    public List<Move> GetMoveset(int player) // no repetition avoidance
+    public List<EngineMove> GetMoveset(int player) // no repetition avoidance
     {
-        var output = new List<Move>();
+        var output = new List<EngineMove>();
         for (int space = 0; space<64;space++)
         {
             int currentPiece = moveGenerator.board[space];
@@ -285,17 +285,17 @@ public class Engine
             {
                 foreach (int endSpace in moveGenerator.GetLegalMovesForPiece(space).GetActive())
                 {
-                    output.Add(new Move(currentPiece, space, endSpace));
+                    output.Add(new EngineMove(currentPiece, space, endSpace));
                 }
             }
         }
         return output;
     }
 
-    public List<Move> GetOrderedMoveset(int player) // TODO make evalMove function to sort these
+    public List<EngineMove> GetOrderedMoveset(int player) // TODO make evalMove function to sort these
     {
-        var quiets = new List<Move>();
-        var captures = new List<Move>();
+        var quiets = new List<EngineMove>();
+        var captures = new List<EngineMove>();
         for (int space = 0; space < 64; space++)
         {
             int currentPiece = moveGenerator.board[space];
@@ -306,29 +306,31 @@ public class Engine
                 foreach (int endSpace in pieceMoveset.GetActive())
                 {
                     bool capture = moveGenerator.board.fullSpaces[endSpace];
-                    //var testMove = moveGenerator.MovePiece(space, endSpace);
+                    UndoMoveData testMove = moveGenerator.MovePiece(space, endSpace);
                     bool skipMove = manager.positionHistory.Contains(moveGenerator.board.Hash()); //avoids repeated positions completely
-                    //int eval = -EvalPosition(player); // that minus is important
-                    //moveGenerator.UndoMovePiece(testMove);
+                    int eval = -EvalPosition(player); // that minus is important
+                    moveGenerator.UndoMovePiece(testMove);
                     if (skipMove) continue;
                     if (capture)
                     {
-                        captures.Add(new Move(currentPiece, space, endSpace));
+                        captures.Add(new EngineMove(currentPiece, space, endSpace, eval));
                     }
                     else
                     {
-                        quiets.Add(new Move(currentPiece, space, endSpace));
+                        quiets.Add(new EngineMove(currentPiece, space, endSpace, eval));
                     }
                 }
             }
         }
+        captures.Sort(EngineMove.CompareByEval);
+        quiets.Sort(EngineMove.CompareByEval);
         captures.AddRange(quiets);
         return captures;
     }
 
-    public List<Move> GetCaptures(int player)
+    public List<EngineMove> GetCaptures(int player)
     {
-        var output = new List<Move>();
+        var output = new List<EngineMove>();
         for (int space = 0; space < 64; space++)
         {
             int currentPiece = moveGenerator.board[space];
@@ -336,7 +338,7 @@ public class Engine
             {
                 foreach (int endSpace in moveGenerator.GetLegalCapturesForPiece(space).GetActive())
                 {
-                    output.Add(new Move(currentPiece, space, endSpace));
+                    output.Add(new EngineMove(currentPiece, space, endSpace));
                 }
             }
         }
@@ -346,12 +348,12 @@ public class Engine
     public int MoveGenCountTest(int depth, int playerToStart, bool reportMoves = false, ConsoleBehaviour console = null)
     {
         if (depth == 0) return 1;
-        List<Move> moves = GetMoveset(playerToStart);
+        List<EngineMove> moves = GetMoveset(playerToStart);
         int output = 0, lastOutput = 0;
-        foreach (Move move in moves)
+        foreach (EngineMove move in moves)
         {
             if(reportMoves) Debug.Log("I just made " + moveGenerator.MoveName(move.Start, move.End));
-            var thisMove = moveGenerator.MovePiece(move.Start, move.End);
+            UndoMoveData thisMove = moveGenerator.MovePiece(move.Start, move.End);
             lastOutput = output;
             output += MoveGenCountTest(depth - 1, playerToStart ^ 1);
             moveGenerator.UndoMovePiece(thisMove);

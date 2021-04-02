@@ -26,9 +26,6 @@ public class MoveGenerator
 
     public const int shortCastlingWhite = 0, longCastlingWhite = 1, shortCastlingBlack = 2, longCastlingBlack = 3;
 
-    public static readonly int[] rooksBeforeCastling = new int[] { 7, 0, 63, 56 };
-    public static readonly int[] rooksAfterCastling = new int[] { 5, 3, 61, 59 };
-
     static readonly int[] slideDirections = new int[] { 8, -8, 1, -1, 9, 7, -7, -9 };
     //up, down, right, left, ur, ul, dr, dl
     static readonly int[][] pawnDirs = new int[][] { new int[] { 8, 9, 7 }, new int[] { -8, -7, -9} };
@@ -70,7 +67,7 @@ public class MoveGenerator
         if (board[startSpace] == 0) return "Tried to move from empty space";
         int piece = board[startSpace];
         int pieceType = PieceType(piece);
-        var testMoveForCheck = MovePiece(startSpace, endSpace);
+        UndoMoveData testMoveForCheck = MovePiece(startSpace, endSpace);
         bool leadsToCheck = IsPlayerInCheck(gameData.playerOnTurn ^ 1);
         UndoMovePiece(testMoveForCheck);
         if (pieceType == 6)
@@ -319,7 +316,7 @@ public class MoveGenerator
         var output = GetPossibleSpacesForPiece(space);
 
         //castling
-        int castlingRow = (player == black) ? 7 : 0;
+        int castlingRow = 7 * player;
         bool shortCastlingValid, longCastlingValid;
         if (pieceType == king && space == castlingRow * 8 + 4)
         {
@@ -355,7 +352,7 @@ public class MoveGenerator
         foreach (int newSpace in output.GetActive())
         {
             bool invalidMove = false;
-            List<int[]> move = MovePiece(space, newSpace);
+            UndoMoveData move = MovePiece(space, newSpace);
             if (IsPlayerInCheck(player))
             {
                 invalidMove = true;
@@ -379,7 +376,7 @@ public class MoveGenerator
         foreach (int newSpace in output.GetActive())
         {
             bool invalidMove = false;
-            List<int[]> move = MovePiece(space, newSpace);
+            UndoMoveData move = MovePiece(space, newSpace);
             if (IsPlayerInCheck(player))
             {
                 invalidMove = true;
@@ -395,50 +392,42 @@ public class MoveGenerator
 
     //moving pieces and undoing moves
 
-    public List<int[]> MovePiece(int start, int end)
+    public UndoMoveData MovePiece(int start, int end)
     {
         //variables
-        int piece = board[start];
+        UndoMoveData undoData = new UndoMoveData(start, end, this);
+        int piece = undoData.movedPiece;
         int color = PieceColor(piece);
         int type = PieceType(piece);
-        int capture = board[end];
+        int capture = undoData.takenPiece;
         bool isCapture = (capture != 0);
-        int castlingIndex = color * 2;
-        var previousPositions = new List<int[]>
-        {
-            new int[] { 0, 0, 0, 0, 0 }, // Bits for castling, last number is for ep
-            new int[] { start, board[start] },
-            new int[] { end, board[end] }
-        };
-
+        int shortCastlingIndex = color * 2; // 0 for white, 2 for black
+        int longCastlingIndex = color * 2 + 1; // 1 for white, 3 for black
 
         //castling + castling prevention when king moved
         if (type == king)
         { 
             int deltaX = end - start;
-            if (!isCapture && (deltaX == 2 || deltaX == -2)) //keeps castling code from running all the time
+            if (!isCapture && (deltaX == 2 || deltaX == -2)) //keeps castling code from running all the time, castling is never a capture
             {
-                int rookOld = 0, rookNew = 0;
-                int rook = ChessBoard.rook | ((color == white) ? whitePiece : blackPiece);
+                int castlingRook = PieceInt(rook, color);
                 if (deltaX == 2)
                 { // short castling
-                    rookOld = start + 3;
-                    rookNew = start + 1;
+                    board.MovePieceToEmptySpace(rooksBefore[shortCastlingIndex], rooksAfter[shortCastlingIndex], castlingRook);
                 }
                 else if (deltaX == -2)
                 { // long castling
-                    rookOld = start - 4;
-                    rookNew = start - 1;
+                    board.MovePieceToEmptySpace(rooksBefore[longCastlingIndex], rooksAfter[longCastlingIndex], castlingRook);
                 }
-                previousPositions.Add(new int[] { rookOld, board[rookOld] });
-                previousPositions.Add(new int[] { rookNew, board[rookNew] });
-                board.MovePieceToEmptySpace(rookOld, rookNew, rook);
             }
-            foreach (int index in new int[] { castlingIndex, castlingIndex + 1 }) //no castling after moving kings
+            // no castling after moving kings
+            gameData.castling[shortCastlingIndex] = false;
+            gameData.castling[longCastlingIndex] = false;
+            /*foreach (int index in new int[] { shortCastlingIndex, longCastlingIndex }) //no castling after moving kings
             {
                 if (gameData.castling[index]) previousPositions[0][index] = 1;
                 gameData.castling[index] = false;
-            }
+            }*/
             if (color == black) blackKingPosition = end;
             else if (color == white) whiteKingPosition = end;
         }
@@ -446,15 +435,13 @@ public class MoveGenerator
         //castling prevention after rook moved
         else if (type == rook)
         { 
-            if (SpaceX(start) == 7 && gameData.castling[castlingIndex])
+            if (SpaceX(start) == 7 && gameData.castling[shortCastlingIndex])
             {
-                gameData.castling[castlingIndex] = false;
-                previousPositions[0][castlingIndex] = 1;
+                gameData.castling[shortCastlingIndex] = false;
             }
-            else if (SpaceX(start) == 0 && gameData.castling[castlingIndex])
+            else if (SpaceX(start) == 0 && gameData.castling[longCastlingIndex])
             {
-                gameData.castling[castlingIndex + 1] = false;
-                previousPositions[0][castlingIndex + 1] = 1;
+                gameData.castling[longCastlingIndex] = false;
             }
         }
 
@@ -464,7 +451,6 @@ public class MoveGenerator
             if (end == gameData.epSpace && gameData.epSpace != 0)
             {
                 int spaceToTake = board.TakeEPPawn(end, color);
-                previousPositions.Add(new int[] { spaceToTake, board[spaceToTake] });
             }
         }
 
@@ -473,24 +459,19 @@ public class MoveGenerator
         {
             if (board.Contains(end, whitePiece | rook)) 
             {
-                previousPositions[0][castlingIndex] = (gameData.castling[castlingIndex]) ? 1 : 0;
-                previousPositions[0][castlingIndex + 1] = (gameData.castling[castlingIndex + 1]) ? 1 : 0; 
-                gameData.castling[castlingIndex] = (!(end == 7)) && gameData.castling[castlingIndex];
-                gameData.castling[castlingIndex + 1] = (!(end == 0)) && gameData.castling[castlingIndex + 1];
+                gameData.castling[shortCastlingIndex] = (!(end == 7)) && gameData.castling[shortCastlingIndex];
+                gameData.castling[longCastlingIndex] = (!(end == 0)) && gameData.castling[longCastlingIndex];
             }
             else if (board.Contains(end, blackPiece | rook)) // ugly repetition
             {
-                previousPositions[0][castlingIndex] = (gameData.castling[castlingIndex]) ? 1 : 0;
-                previousPositions[0][castlingIndex + 1] = (gameData.castling[castlingIndex + 1]) ? 1 : 0;
-                gameData.castling[castlingIndex] = (!(end == 63)) && gameData.castling[castlingIndex];
-                gameData.castling[castlingIndex + 1] = (!(end == 56)) && gameData.castling[castlingIndex + 1];
+                gameData.castling[shortCastlingIndex] = (!(end == 63)) && gameData.castling[shortCastlingIndex];
+                gameData.castling[longCastlingIndex] = (!(end == 56)) && gameData.castling[longCastlingIndex];
             }
         }
 
-        //leave that like this! dont put it the if clause up there. IT WILL BREAK
+        //leave that like this! dont put it in the if clause up there. IT WILL BREAK
         
         //setting the e.p space for the next move
-        previousPositions[0][4] = gameData.epSpace;
         if (!isCapture && Mathf.Abs(start / 8 - end / 8) == 2 && type == pawn)
         {
             gameData.epSpace = (color == black) ? end + 8 : end - 8;
@@ -521,29 +502,29 @@ public class MoveGenerator
         SetAttackedSpaceData();
         //SetKingPositions();
         //board.UpdateFullSpaces();
-        return previousPositions;
+        return undoData;
     }
 
-
-
-    public void UndoMovePiece(List<int[]> prevPos)
-    {
-        int prevPosCount = prevPos.Count;
-        int movedPiece = prevPos[1][1];
-        gameData.epSpace = prevPos[0][4];
-        for (int i = 0; i < 4; i++)
-        {
-            if (prevPos[0][i] == 1)
-            {
-                gameData.castling[i] = true;
-            }
+    public void UndoMovePiece(UndoMoveData undoData){
+        board.MovePieceToEmptySpace(undoData.end, undoData.start, undoData.movedPiece);
+        gameData.castling = undoData.castlingBefore;
+        gameData.epSpace = undoData.epSpaceBefore;
+        if(undoData.takenPiece != 0){
+            board.CreatePiece(undoData.end, undoData.takenPiece);
         }
-        for (int i = 1; i < prevPosCount; i++)
-        {
-            board[prevPos[i][0]] = prevPos[i][1];
+        if (undoData.wasPromotion){
+            board.TurnQueenToPawn(undoData.start, PieceColor(undoData.movedPiece));
+        }
+        if(undoData.end == undoData.epSpaceBefore && undoData.end != 0){ // move was en passant
+            int pawnColor = (PieceColor(undoData.movedPiece) == white) ? blackPiece : whitePiece;
+            int epOffset = (pawnColor == blackPiece) ? -8 : 8;
+            board.CreatePiece(undoData.end + epOffset, pawn|pawnColor);
+            return; // ep cant be castling
+        }
+        if(undoData.castlingIndex != -1){ // move was castling
+            int rookColor = (PieceColor(undoData.movedPiece) == white) ? whitePiece : blackPiece;
+            board.MovePieceToEmptySpace(rooksAfter[undoData.castlingIndex], rooksBefore[undoData.castlingIndex], rook | rookColor);
         }
         SetKingPositions();
-        //dreckig und langsam
-        board.UpdateFullSpaces();
     }
 }

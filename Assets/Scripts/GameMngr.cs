@@ -27,14 +27,14 @@ public class GameMngr : MonoBehaviour
 
     public bool gameOver;
 
-    //sehr dumm bitte ändern
+    //sehr dumm bitte ï¿½ndern
     public bool theoIsBlack;
     public bool theoIsWhite;
     public int engineDepth;
 
     public int playerOnTurn;
 
-    [HideInInspector] public List<List<int[]>> moveHistory;
+    [HideInInspector] public List<UndoMoveData> moveHistory;
     [SerializeField] public List<ulong> positionHistory;
 
     public GameState currentState;
@@ -60,7 +60,7 @@ public class GameMngr : MonoBehaviour
     public static readonly string perftTest5 = "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10";
 
 
-    List<int[]> lastMove;
+    UndoMoveData lastMove;
     public Engine engine;
     [HideInInspector]
     public UnityEvent moveMade = new UnityEvent();
@@ -79,10 +79,10 @@ public class GameMngr : MonoBehaviour
 
     void Start()
     {
-        moveHistory = new List<List<int[]>>();
+        moveHistory = new List<UndoMoveData>();
         positionHistory = new List<ulong>();
         boardCreation.creationFinished.AddListener(OnBoardFinished);
-        SpeedTest.TestFunctionSpeed(() => moveGenerator.board[10] = whitePiece | rook, 10000000);
+        //SpeedTest.TestFunctionSpeed(() => moveGenerator.board[10] = whitePiece | rook, 10000000);
     }
 
     public void OnBoardFinished()
@@ -109,6 +109,8 @@ public class GameMngr : MonoBehaviour
         currentState = CurrentState();
         moveHistory.Add(lastMove);
         positionHistory.Add(moveGenerator.board.Hash());
+        console.Print(moveGenerator.gameData.castling[0].ToString() + " " + moveGenerator.gameData.castling[1].ToString() + " | " + moveGenerator.gameData.castling[2].ToString() + " " + moveGenerator.gameData.castling[3].ToString() + " ");
+        console.Print(SpaceName(moveGenerator.gameData.epSpace));
         if(currentState == GameState.Mate || currentState == GameState.Draw)
         {
             gameEnd.Invoke();
@@ -143,12 +145,13 @@ public class GameMngr : MonoBehaviour
     {
         if (gameOver) return;
         lastMove = moveGenerator.MovePiece(start, end);
-        if (lastMove.Count == 5) // Castling!
+        if (lastMove.castlingIndex != -1) // Castling!
         {
-            pieceHandler.MovePieceSprite(lastMove[3][0], lastMove[4][0]);
-        } else if (lastMove.Count == 4) // en passant
+            pieceHandler.MovePieceSprite(rooksBefore[lastMove.castlingIndex], rooksAfter[lastMove.castlingIndex]);
+        } else if (lastMove.end == lastMove.epSpaceBefore) // en passant
         {
-            pieceHandler.DisablePiece(lastMove[3][0]);
+            int epOffset = (PieceColor(lastMove.movedPiece) == white) ? -8 : 8;
+            pieceHandler.DisablePiece(lastMove.end + epOffset);
         }
         playerOnTurn = (playerOnTurn == white) ? black : white;
         moveMade.Invoke();
@@ -187,7 +190,7 @@ public class GameMngr : MonoBehaviour
     public GameState CurrentState()
     {
         //TODO add all the other posibilities for draws (50 moves, repetition...)
-        List<Move> moveset = engine.GetMoveset(playerOnTurn);
+        List<EngineMove> moveset = engine.GetMoveset(playerOnTurn);
         if(moveset.Count == 0)
         {
             if (moveGenerator.IsPlayerInCheck(playerOnTurn)) return GameState.Mate;
@@ -294,7 +297,7 @@ public class GameMngr : MonoBehaviour
         spaceHandler.UnHighlightAll();
         moveGenerator.LoadFEN(fen);
         gameOver = false;
-        moveHistory = new List<List<int[]>>();
+        moveHistory = new List<UndoMoveData>();
         positionHistory = new List<ulong>() { moveGenerator.board.Hash() };
         playerOnTurn = moveGenerator.gameData.playerOnTurn;
         pieceHandler.LayOutPieces(moveGenerator.board);

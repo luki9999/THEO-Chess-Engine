@@ -130,6 +130,15 @@ public class ChessBoard
 
     static readonly BitBoard whiteSpaces = (BitBoard)0b10101010_01010101_10101010_01010101_10101010_01010101_10101010_01010101;
 
+
+    //castling data 
+    //short white, long white, short black, short white
+    public static readonly int[] rooksBefore = new int[] {7, 0, 63, 56};
+    public static readonly int[] kingsBefore = new int[] {4, 4, 60, 60};
+    public static readonly int[] rooksAfter = new int[] {5, 3, 61, 59};
+    public static readonly int[] kingsAfter = new int[] {6, 2, 62, 58};
+
+
     public ChessBoard()
     {
         piecePositionBoards = new BitBoard[12];
@@ -229,6 +238,10 @@ public class ChessBoard
     public static int PieceType(int piece)
     {
         return piece & 0b111;
+    }
+
+    public static int PieceInt(int pieceType, int color){
+        return pieceType | ((color + 1) << 3);
     }
 
     //TODO make function to move specific piece without looping through all boards, has to be very fast
@@ -340,6 +353,11 @@ public class ChessBoard
         {
             fullSpaces += piecePositionBoards[i];
         }
+    }
+
+    public void CreatePiece(int position, int piece){
+        piecePositionBoards[BitBoardIndex(piece)][position] = true;
+        fullSpaces[position] = true;
     }
 
     public void MovePieceToEmptySpace(int start, int end, int piece)
