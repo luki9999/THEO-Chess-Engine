@@ -23,7 +23,7 @@ public class EvalCommand : ConsoleCommand
         }
         else
         {
-            int evalValue = manager.engine.EvalPosition(manager.playerOnTurn);
+            int evalValue = manager.engine.Evaluation.EvaluatePosition(manager.playerOnTurn);
             console.Print("Current static evaluation: " + evalValue.ToString());
         }
         return true;

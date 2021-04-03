@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: General_reload
   m_EditorClassIdentifier: 
   commandString: reload
-  helpString: Reloads piece positions.
+  helpString: Reloads pieces. Useful in case of bugs.

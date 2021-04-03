@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Threading;
 using UnityEngine.Events;
+using System.Linq;
 
 public struct EngineMove
 {
@@ -20,7 +21,7 @@ public struct EngineMove
 
     public static int CompareByEval(EngineMove move1, EngineMove move2)
     {
-        return move1.Eval.CompareTo(move2.Eval);
+        return -move1.Eval.CompareTo(move2.Eval); // that minus makes sure better moves come first in the search
     }
 }
 
@@ -28,15 +29,19 @@ public struct SearchData
 {
     public int currentSearchCount;
     public int currentBestEval;
-    public string currentBestMove;
+    public int currentMoveScore;
+    public string currentBestMoveName;
     public bool valuesChanged;
+    public bool searchStarted;
 
-    public SearchData(int currentSearchCount, int currentBestEval, string currentBestMove)
+    public SearchData(int currentSearchCount, int currentBestEval, string currentBestMove, int currentMoveScore)
     {
         this.currentSearchCount = currentSearchCount;
         this.currentBestEval = currentBestEval;
-        this.currentBestMove = currentBestMove;
+        this.currentBestMoveName = currentBestMove;
+        this.currentMoveScore = currentMoveScore;
         valuesChanged = false;
+        searchStarted = false;
     }
 }
 
@@ -53,6 +58,8 @@ public class Engine
     public SearchData currentSearch;
     EngineMove currentBestMove;
     public EngineMove nextFoundMove;
+    Evaluation evaluator;
+    public Evaluation Evaluation{get => evaluator; }
 
     readonly int[] pieceValues = new int[] {0, 100, 300, 300, 500, 900, 0};
 
@@ -69,105 +76,27 @@ public class Engine
         moveGenerator = moveGenToUse;
         manager = GameObject.FindGameObjectWithTag("Manager").GetComponent<GameMngr>();
         console = manager.console;
-        currentSearch = new SearchData(0, 0, "");
-    }
+        currentSearch = new SearchData(0, 0, "", 0);
+        evaluator = new Evaluation(moveGenerator);
+    }     
 
-    public static int OtherPlayer(int player)
-    {
-        return (player == ChessBoard.white) ? ChessBoard.black : ChessBoard.white;
-    }
-
-    int MaterialValue()
-    {
-        int output = 0;
-        for (int i = 0; i < 64; i++)
-        {
-            int currentPiece = moveGenerator.board[i];
-            int valueSign = (ChessBoard.PieceColor(currentPiece) == ChessBoard.white) ? 1 : -1;
-            int currentValue = pieceValues[ChessBoard.PieceType(currentPiece)] * valueSign;
-            output += currentValue;
-        }
-        return output;
-    }
-
-    int MaterialSum()
-    {
-        int output = 0;
-        for (int i = 0; i < 64; i++)
-        {
-            int currentPiece = moveGenerator.board[i];
-            int currentValue = pieceValues[ChessBoard.PieceType(currentPiece)];
-            output += currentValue;
-        }
-        return output;
-    }
-
-    int BonusValue()
-    {
-        int output = 0;
-        bool endgame = MaterialSum() < endgameThreshold;
-        foreach (int piece in ChessBoard.possiblePieces)
-        {
-            foreach (int space in moveGenerator.board.FindPieces(piece))
-            {
-                int colorSign = ChessBoard.PieceColor(piece) == ChessBoard.black ? -1 : 1;
-                int spaceValue = PieceBonusTable.Read(piece, space, endgame);
-                output += spaceValue * colorSign;
-            }
-        }
-        return output;
-    }
-
-    int EndgameKingDistanceBonus()
-    {
-        int whiteBonus = 0, blackBonus = 0;
-        foreach (int piece in ChessBoard.possiblePieces)
-        {
-            if (ChessBoard.PieceType(piece) == ChessBoard.pawn || ChessBoard.PieceType(piece) == ChessBoard.king) continue; //ignore pawns and kings
-            foreach (int space in moveGenerator.board.FindPieces(piece))
-            {
-                if (ChessBoard.PieceColor(piece) == ChessBoard.white)
-                {
-                    whiteBonus += 7 - ChessBoard.Distance(piece, moveGenerator.blackKingPosition);
-                } 
-                else if(ChessBoard.PieceColor(piece) == ChessBoard.black)
-                {
-                    blackBonus += 7 - ChessBoard.Distance(piece, moveGenerator.whiteKingPosition);
-                }
-            }
-        }
-        whiteBonus = (whiteBonus * endgamePieceDistanceBonusMultiplier) / moveGenerator.board.WhitePieceCount();
-        blackBonus = (blackBonus * endgamePieceDistanceBonusMultiplier) / moveGenerator.board.BlackPieceCount();
-        int bonusForDistanceBetweenKings = (7 - ChessBoard.Distance(moveGenerator.blackKingPosition, moveGenerator.whiteKingPosition)) * endgamePieceDistanceBonusMultiplier;
-        return ((whiteBonus - blackBonus)) + bonusForDistanceBetweenKings;
-    }
-
-    public int EvalPosition(int player)
-    {
-        int eval = MaterialValue();
-        bool endgame = MaterialSum() <= endgameThreshold;
-        if (moveGenerator.IsPlayerInCheck(player)) eval -= checkBonus;
-        if (moveGenerator.IsPlayerInCheck(player ^ 1)) eval += checkBonus;
-        eval += BonusValue();
-        if (endgame) eval += EndgameKingDistanceBonus();
-        return (player == ChessBoard.white) ? eval : -eval;
-    }
-     
-
-    public int Search(int player, int depth, int alpha, int beta)
+    public int Search(int player, int depth, int alpha, int beta, int captureDepth = -1)
     {
         searchCount++;
-        if (depth == 0) return CaptureSearch(player, alpha, beta);
+        if (depth == 0) return CaptureSearch(player, captureDepth, alpha, beta);
         List<EngineMove> moves = GetOrderedMoveset(player);
         if (moves.Count == 0) 
         {
-            if(moveGenerator.IsPlayerInCheck(player)) return -10000 + depth; //Checkmate in depth moves, favors earlier checkmate 
+            if(moveGenerator.IsPlayerInCheck(player)) return -10000 + depth; //Checkmate in depth ply, favors earlier checkmate 
             return 0; // draw
         }
         foreach (EngineMove move in moves)
         {
             UndoMoveData madeMove = moveGenerator.MovePiece(move.Start, move.End);
-            int eval = -Search(player ^ 1, depth - 1, -beta, -alpha);
+            int eval = -Search(player ^ 1, depth - 1, -beta, -alpha, captureDepth);
+            if(manager.positionHistory.Count(x => x == moveGenerator.board.Hash()) == 2) eval = 0; //draw after 3 fold repetion
+            //if(manager.moveHistory.Count(x => (ChessBoard.PieceType(x.movedPiece) != ChessBoard.pawn)) == 49) eval = 0;  
+
             moveGenerator.UndoMovePiece(madeMove);
 
             if (eval >= beta)//prune the branch
@@ -182,22 +111,23 @@ public class Engine
                {
                     currentBestMove = move;
 
-                    currentSearch.currentBestMove = moveGenerator.MoveName(move.Start, move.End); // usable for displaying in console
+                    currentSearch.currentBestMoveName = moveGenerator.MoveName(move.Start, move.End); // SLOW: i'm literally building a string in the most performance critical place... usable for displaying in console
                     currentSearch.currentSearchCount = searchCount;
                     currentSearch.currentBestEval = alpha;
+                    currentSearch.currentMoveScore = evaluator.EvaluateMove(currentBestMove);
                     currentSearch.valuesChanged = true;
                }
             }
         }
-
         return alpha;
     }
 
 
-    public int CaptureSearch(int player, int alpha, int beta)
+    public int CaptureSearch(int player, int captureDepth, int alpha, int beta)
     {
         searchCount++;
-        int eval = EvalPosition(player);
+        int eval = evaluator.EvaluatePosition(player);
+        if (captureDepth == 0) return eval; //when captureDepth is negative this never happens
         if (eval >= beta)
         {
             return beta;
@@ -212,7 +142,7 @@ public class Engine
         for (int i = 0; i < moves.Count; i++)
         {
             UndoMoveData madeMove = moveGenerator.MovePiece(moves[i].Start, moves[i].End);
-            eval = -CaptureSearch(player ^ 1, -beta, -alpha);
+            eval = -CaptureSearch(player ^ 1, captureDepth-1, -beta, -alpha);
             moveGenerator.UndoMovePiece(madeMove);
             if (eval >= beta) //prune the branch
             {
@@ -228,20 +158,20 @@ public class Engine
     }
 
 
-    public EngineMove ChooseMove(int player, int depth)
+    public EngineMove ChooseMove(int player, int depth, int captureDepth = -1)
     {
         originalDepth = depth; //important
         searchCount = 0;
-        Search(player, depth, negativeInfinity, positiveInfinity);
+        Search(player, depth, negativeInfinity, positiveInfinity, captureDepth);
         currentSearch.currentSearchCount = searchCount;
         currentSearch.valuesChanged = true;
-
         return currentBestMove;
     }
 
     public void ThreadedMove()
     {
         Thread thread = new Thread(ChooseMove) { IsBackground = true };
+        currentSearch.searchStarted = true;
         thread.Start();
     }
 
@@ -253,7 +183,7 @@ public class Engine
 
     public void ChooseMove()
     {
-        nextFoundMove = ChooseMove(manager.playerOnTurn, manager.engineDepth);
+        nextFoundMove = ChooseMove(manager.playerOnTurn, manager.engineDepth, manager.captureDepth);
         moveReady = true;
     }
 
@@ -269,7 +199,7 @@ public class Engine
         if (allMoves.Count == 0) //checkmate or draw 
         {
             manager.gameEnd.Invoke();
-            return new EngineMove(0, 0, 0);
+            return new EngineMove(0, 0, 0); // maybe dont... hides bugs
         }
         int moveIndex = Random.Range(0, allMoves.Count);
         return allMoves[moveIndex];
@@ -294,8 +224,7 @@ public class Engine
 
     public List<EngineMove> GetOrderedMoveset(int player) // TODO make evalMove function to sort these
     {
-        var quiets = new List<EngineMove>();
-        var captures = new List<EngineMove>();
+        var moves = new List<EngineMove>();
         for (int space = 0; space < 64; space++)
         {
             int currentPiece = moveGenerator.board[space];
@@ -305,27 +234,16 @@ public class Engine
                 if ((ulong)pieceMoveset == 0) continue;
                 foreach (int endSpace in pieceMoveset.GetActive())
                 {
+                    var newMove = new EngineMove(currentPiece, space, endSpace);
                     bool capture = moveGenerator.board.fullSpaces[endSpace];
-                    UndoMoveData testMove = moveGenerator.MovePiece(space, endSpace);
-                    bool skipMove = manager.positionHistory.Contains(moveGenerator.board.Hash()); //avoids repeated positions completely
-                    int eval = -EvalPosition(player); // that minus is important
-                    moveGenerator.UndoMovePiece(testMove);
-                    if (skipMove) continue;
-                    if (capture)
-                    {
-                        captures.Add(new EngineMove(currentPiece, space, endSpace, eval));
-                    }
-                    else
-                    {
-                        quiets.Add(new EngineMove(currentPiece, space, endSpace, eval));
-                    }
+                    int eval = evaluator.EvaluateMove(newMove);
+                    newMove.Eval = eval;
+                    moves.Add(newMove);
                 }
             }
         }
-        captures.Sort(EngineMove.CompareByEval);
-        quiets.Sort(EngineMove.CompareByEval);
-        captures.AddRange(quiets);
-        return captures;
+        moves.Sort(EngineMove.CompareByEval);
+        return moves;
     }
 
     public List<EngineMove> GetCaptures(int player)
@@ -338,10 +256,13 @@ public class Engine
             {
                 foreach (int endSpace in moveGenerator.GetLegalCapturesForPiece(space).GetActive())
                 {
+                    EngineMove nextMove = new EngineMove(currentPiece, space, endSpace);
+                    nextMove.Eval = evaluator.EvaluateMove(nextMove);
                     output.Add(new EngineMove(currentPiece, space, endSpace));
                 }
             }
         }
+        output.Sort(EngineMove.CompareByEval);
         return output;
     }
 

@@ -189,6 +189,7 @@ public class PieceHandler : MonoBehaviour
 
     public void DisablePiece(int position)
     {
+        if(GetPieceAtPos(position) == null) return;
         GetPieceAtPos(position).SetActive(false);
         piecePositions.Remove(position);
     }

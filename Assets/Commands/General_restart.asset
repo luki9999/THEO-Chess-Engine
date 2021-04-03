@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: General_restart
   m_EditorClassIdentifier: 
   commandString: restart
-  helpString: Puts all the pieces back to their starting position.
+  helpString: Restarts the game.

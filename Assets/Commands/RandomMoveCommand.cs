@@ -16,8 +16,10 @@ public class RandomMoveCommand : ConsoleCommand
     //runs on command execution
     public override bool Action(string[] args)
     {
+        EngineState prevState = manager.engineState;
+        manager.engineState = (manager.playerOnTurn == ChessBoard.white) ? EngineState.White : EngineState.Black;
         manager.engine.ThreadedMove();
-        console.Print("------");
+        manager.engineState = prevState;
         return true;
     }
 }

@@ -12,6 +12,13 @@ public enum GameState
     Draw
 }
 
+public enum EngineState{
+    Off,
+    White,
+    Black,
+    Both
+}
+
 public class GameMngr : MonoBehaviour
 {
     public MoveGenerator moveGenerator;
@@ -26,11 +33,11 @@ public class GameMngr : MonoBehaviour
     public bool boardFlipped;
 
     public bool gameOver;
+    public int movesWithoutPawn = 0;
 
-    //sehr dumm bitte �ndern
-    public bool theoIsBlack;
-    public bool theoIsWhite;
+    public EngineState engineState;
     public int engineDepth;
+    public int captureDepth;
 
     public int playerOnTurn;
 
@@ -82,6 +89,7 @@ public class GameMngr : MonoBehaviour
         moveHistory = new List<UndoMoveData>();
         positionHistory = new List<ulong>();
         boardCreation.creationFinished.AddListener(OnBoardFinished);
+        engineState = EngineState.Off;
         //SpeedTest.TestFunctionSpeed(() => moveGenerator.board[10] = whitePiece | rook, 10000000);
     }
 
@@ -109,18 +117,21 @@ public class GameMngr : MonoBehaviour
         currentState = CurrentState();
         moveHistory.Add(lastMove);
         positionHistory.Add(moveGenerator.board.Hash());
-        console.Print(moveGenerator.gameData.castling[0].ToString() + " " + moveGenerator.gameData.castling[1].ToString() + " | " + moveGenerator.gameData.castling[2].ToString() + " " + moveGenerator.gameData.castling[3].ToString() + " ");
-        console.Print(SpaceName(moveGenerator.gameData.epSpace));
+        if (PieceType(lastMove.movedPiece) == pawn){
+            movesWithoutPawn = 0;
+        } else{
+            movesWithoutPawn ++;
+        }
         if(currentState == GameState.Mate || currentState == GameState.Draw)
         {
             gameEnd.Invoke();
             gameOver = true;
         }
         if (gameOver) return;
-        if (theoIsBlack && playerOnTurn == black)
+        if (engineState == EngineState.Black && playerOnTurn == black)
         {
             engine.ThreadedMove();
-        } else if (theoIsWhite && playerOnTurn == white)
+        } else if (engineState == EngineState.White && playerOnTurn == white)
         {
             engine.ThreadedMove();
         }
@@ -128,22 +139,26 @@ public class GameMngr : MonoBehaviour
 
     void OnGameOver()
     {
-        console.Print("Game over.");
+        console.Print("The game ended.");
+        engineState = EngineState.Off;
         string playerStr = (playerOnTurn == white) ? "White" : "Black";
         if (moveGenerator.IsPlayerInCheck(playerOnTurn))
         {
-
             console.Print(playerStr + " is checkmate. Type restart to reset board.");
         }
         else
         {
-            console.Print(playerStr + " can't move any more, this is a draw. Type restart to reset board.");
+            console.Print("This was a draw. Type restart to reset board.");
         }
     }
 
     public void MakeMoveNoGraphics(int start, int end)
     {
         if (gameOver) return;
+        if(engineState != EngineState.Both){        
+            if(playerOnTurn == white && !(engineState == EngineState.White)) console.Print("W: " + moveGenerator.MoveName(start, end));
+            if(playerOnTurn == black && !(engineState == EngineState.Black)) console.Print("B: " + moveGenerator.MoveName(start, end));
+        }
         lastMove = moveGenerator.MovePiece(start, end);
         if (lastMove.castlingIndex != -1) // Castling!
         {
@@ -189,7 +204,8 @@ public class GameMngr : MonoBehaviour
 
     public GameState CurrentState()
     {
-        //TODO add all the other posibilities for draws (50 moves, repetition...)
+        if(positionHistory.Count(x => x == moveGenerator.board.Hash()) == 3) return GameState.Draw; //draw after 3 fold repetion
+        if(movesWithoutPawn == 50) return GameState.Draw; //draw after 50 moves without pawn move
         List<EngineMove> moveset = engine.GetMoveset(playerOnTurn);
         if(moveset.Count == 0)
         {
@@ -202,17 +218,22 @@ public class GameMngr : MonoBehaviour
     void Update()
     {
         if (!cursor.activeSelf) cursor.SetActive(true);
+        if(engine.currentSearch.searchStarted){
+            console.Print(" ");
+            engine.currentSearch.searchStarted = false;
+        }
         if (engine.currentSearch.valuesChanged)
         {
-            console.ReplaceLast(engine.currentSearch.currentBestMove.PadRight(6)
-                + "| Eval: " + engine.currentSearch.currentBestEval.ToString().PadRight(8) 
-                + "| Count: " + engine.currentSearch.currentSearchCount.ToString().PadRight(12));
+            string playerStr = (playerOnTurn == white) ? "W: " : "B: ";
+            console.ReplaceLast(playerStr + engine.currentSearch.currentBestMoveName.PadRight(6)
+                + " | Static: " + engine.currentSearch.currentBestEval.ToString().PadLeft(7) 
+                + " | Delta: " + engine.currentSearch.currentMoveScore.ToString().PadLeft(7)
+                + " | Count: " + engine.currentSearch.currentSearchCount.ToString().PadLeft(12));
             engine.currentSearch.valuesChanged = false;
         }
         if (engine.moveReady)
         {
             OnEngineMoveReady();
-            if (theoIsBlack || theoIsWhite) console.Print("");
             engine.moveReady = false;
         }
         if (engine.evalReady)
@@ -225,6 +246,9 @@ public class GameMngr : MonoBehaviour
     void OnEngineMoveReady()
     {
         MakeMoveAnimated(engine.nextFoundMove.Start, engine.nextFoundMove.End);
+        if(engineState == EngineState.Both){
+            engine.ThreadedMove();
+        }
     }
 
     public void MoveGenerationTest(int piece)
@@ -287,8 +311,6 @@ public class GameMngr : MonoBehaviour
     public void StartChessGame()
     {
         LoadPosition(startingPosString);
-        theoIsBlack = false;
-        theoIsWhite = false;
     }
 
     public void LoadPosition(string fen)
@@ -300,6 +322,7 @@ public class GameMngr : MonoBehaviour
         moveHistory = new List<UndoMoveData>();
         positionHistory = new List<ulong>() { moveGenerator.board.Hash() };
         playerOnTurn = moveGenerator.gameData.playerOnTurn;
+        engineState = EngineState.Off;
         pieceHandler.LayOutPieces(moveGenerator.board);
         /*for (int i = 0; i < 12; i++)
         {

@@ -16,4 +16,4 @@ MonoBehaviour:
   helpString: 'Runs a performance test on the engine with a specified depth.
 
     Syntax:
-    perft (int)depth'
+    perft (int)'

@@ -40,7 +40,6 @@ public class MoveGenerator
     public int whiteKingPosition;
     public int blackKingPosition;
 
-
     public MoveGenerator()
     {
         board = new ChessBoard();
