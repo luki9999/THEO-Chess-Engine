@@ -11,7 +11,7 @@ Features:
   - Graphics in Unity, engine in C#
 
 Console commands:
-  - clear
+  - clear /n
     Clears the console
     
   - log
