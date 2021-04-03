@@ -47,30 +47,30 @@ public struct SearchData
 
 public class Engine
 {
-    GameMngr manager;
-    MoveGenerator moveGenerator;
-    ConsoleBehaviour console;
-    int possibleMoveCount;
-    public int originalDepth;
-    public int searchCount;
-    public bool moveReady = false;
-    public bool evalReady = false;
-    public SearchData currentSearch;
-    EngineMove currentBestMove;
-    public EngineMove nextFoundMove;
-    Evaluation evaluator;
-    public Evaluation Evaluation{get => evaluator; }
-
-    readonly int[] pieceValues = new int[] {0, 100, 300, 300, 500, 900, 0};
-
-    const int checkBonus = 30;
-    const int endgamePieceDistanceBonusMultiplier = 5;
-
-    const int endgameThreshold = 2 * 500 + 2 * 300 + 2 * 100; //two rooks, two pieces, two pawns or similar
-
+    //consts
     const int positiveInfinity = 9999999;
     const int negativeInfinity = -positiveInfinity;
 
+    //linking
+    GameMngr manager;
+    MoveGenerator moveGenerator;
+    ConsoleBehaviour console;
+    Evaluation evaluator;
+    public Evaluation Evaluation{get => evaluator; }
+
+    //search data
+    int possibleMoveCount;
+    public int originalDepth;
+    public int searchCount;
+    EngineMove currentBestMove;
+    
+    //output data
+    public bool moveReady = false;
+    public bool evalReady = false;
+    public EngineMove nextFoundMove;
+    public SearchData currentSearch;
+
+    //init
     public Engine(MoveGenerator moveGenToUse)
     {
         moveGenerator = moveGenToUse;
@@ -80,132 +80,8 @@ public class Engine
         evaluator = new Evaluation(moveGenerator);
     }     
 
-    public int Search(int player, int depth, int alpha, int beta, int captureDepth = -1)
-    {
-        searchCount++;
-        if (depth == 0) return CaptureSearch(player, captureDepth, alpha, beta);
-        List<EngineMove> moves = GetOrderedMoveset(player);
-        if (moves.Count == 0) 
-        {
-            if(moveGenerator.IsPlayerInCheck(player)) return -10000 + depth; //Checkmate in depth ply, favors earlier checkmate 
-            return 0; // draw
-        }
-        foreach (EngineMove move in moves)
-        {
-            UndoMoveData madeMove = moveGenerator.MovePiece(move.Start, move.End);
-            int eval = -Search(player ^ 1, depth - 1, -beta, -alpha, captureDepth);
-            if(manager.positionHistory.Count(x => x == moveGenerator.board.Hash()) == 2) eval = 0; //draw after 3 fold repetion
-            //if(manager.moveHistory.Count(x => (ChessBoard.PieceType(x.movedPiece) != ChessBoard.pawn)) == 49) eval = 0;  
-
-            moveGenerator.UndoMovePiece(madeMove);
-
-            if (eval >= beta)//prune the branch
-            {
-                return beta;
-            }
-            if (eval > alpha)
-            { //found new best move
-               alpha = eval;
-               //Debug.Log("neues alpha: " + maxValue.ToString());
-               if (depth == originalDepth)//dont forget to set this in wrapper
-               {
-                    currentBestMove = move;
-
-                    currentSearch.currentBestMoveName = moveGenerator.MoveName(move.Start, move.End); // SLOW: i'm literally building a string in the most performance critical place... usable for displaying in console
-                    currentSearch.currentSearchCount = searchCount;
-                    currentSearch.currentBestEval = alpha;
-                    currentSearch.currentMoveScore = evaluator.EvaluateMove(currentBestMove);
-                    currentSearch.valuesChanged = true;
-               }
-            }
-        }
-        return alpha;
-    }
-
-
-    public int CaptureSearch(int player, int captureDepth, int alpha, int beta)
-    {
-        searchCount++;
-        int eval = evaluator.EvaluatePosition(player);
-        if (captureDepth == 0) return eval; //when captureDepth is negative this never happens
-        if (eval >= beta)
-        {
-            return beta;
-        }
-        if (eval > alpha)
-        { //in case the pos is good but all captures are bad
-            alpha = eval;
-        }
-        //searchCount++;
-        List<EngineMove> moves = GetCaptures(player);
-
-        for (int i = 0; i < moves.Count; i++)
-        {
-            UndoMoveData madeMove = moveGenerator.MovePiece(moves[i].Start, moves[i].End);
-            eval = -CaptureSearch(player ^ 1, captureDepth-1, -beta, -alpha);
-            moveGenerator.UndoMovePiece(madeMove);
-            if (eval >= beta) //prune the branch
-            {
-                return beta;
-            }
-            if (eval > alpha)
-            { //found new best move
-                alpha = eval;
-                //Debug.Log("neues alpha: " + maxValue.ToString());
-            }
-        }
-        return alpha;
-    }
-
-
-    public EngineMove ChooseMove(int player, int depth, int captureDepth = -1)
-    {
-        originalDepth = depth; //important
-        searchCount = 0;
-        Search(player, depth, negativeInfinity, positiveInfinity, captureDepth);
-        currentSearch.currentSearchCount = searchCount;
-        currentSearch.valuesChanged = true;
-        return currentBestMove;
-    }
-
-    public void ThreadedMove()
-    {
-        Thread thread = new Thread(ChooseMove) { IsBackground = true };
-        currentSearch.searchStarted = true;
-        thread.Start();
-    }
-
-    public void ThreadedSearch()
-    {
-        Thread thread = new Thread(SearchEval) { IsBackground = true };
-        thread.Start();
-    }
-
-    public void ChooseMove()
-    {
-        nextFoundMove = ChooseMove(manager.playerOnTurn, manager.engineDepth, manager.captureDepth);
-        moveReady = true;
-    }
-
-    public void SearchEval()
-    {
-        ChooseMove(manager.playerOnTurn, manager.engineDepth);
-        evalReady = true;
-    }
-
-    public EngineMove ChooseRandomMove(int player)
-    {
-        var allMoves = GetMoveset(player);
-        if (allMoves.Count == 0) //checkmate or draw 
-        {
-            manager.gameEnd.Invoke();
-            return new EngineMove(0, 0, 0); // maybe dont... hides bugs
-        }
-        int moveIndex = Random.Range(0, allMoves.Count);
-        return allMoves[moveIndex];
-    }
-
-    public List<EngineMove> GetMoveset(int player) // no repetition avoidance
+    //moveset generation
+    public List<EngineMove> GetMoveset(int player) //ATTN: no repetition avoidance
     {
         var output = new List<EngineMove>();
         for (int space = 0; space<64;space++)
@@ -222,7 +98,7 @@ public class Engine
         return output;
     }
 
-    public List<EngineMove> GetOrderedMoveset(int player) // TODO make evalMove function to sort these
+    public List<EngineMove> GetOrderedMoveset(int player) // gets an ordered (by move eval) list of possible list
     {
         var moves = new List<EngineMove>();
         for (int space = 0; space < 64; space++)
@@ -266,6 +142,149 @@ public class Engine
         return output;
     }
 
+    //move searching
+    public int Search(int player, int depth, int alpha, int beta, int captureDepth = -1)
+    {
+        searchCount++;
+        if (depth == 0) return CaptureSearch(player, captureDepth, alpha, beta);
+        List<EngineMove> moves = GetOrderedMoveset(player);
+        if (moves.Count == 0) 
+        {
+            if(moveGenerator.IsPlayerInCheck(player)) return -10000 + depth; //Checkmate in depth ply, favors earlier checkmate 
+            return 0; // draw
+        }
+        foreach (EngineMove move in moves)
+        {
+            UndoMoveData madeMove = moveGenerator.MovePiece(move.Start, move.End);
+            int eval = -Search(player ^ 1, depth - 1, -beta, -alpha, captureDepth);
+            if(manager.positionHistory.Count(x => x == moveGenerator.board.Hash()) == 2) eval = 0; //draw after 3 fold repetion
+            moveGenerator.UndoMovePiece(madeMove);
+
+            if (eval >= beta)//prune the branch
+            {
+                return beta;
+            }
+            if (eval > alpha)
+            { //found new best move
+               alpha = eval;
+               //Debug.Log("neues alpha: " + maxValue.ToString());
+               if (depth == originalDepth)//dont forget to set this in wrapper
+               {
+                    currentBestMove = move;
+
+                    currentSearch.currentBestMoveName = moveGenerator.MoveName(move.Start, move.End); // SLOW: i'm literally building a string in the most performance critical place... usable for displaying in console
+                    currentSearch.currentSearchCount = searchCount;
+                    currentSearch.currentBestEval = alpha;
+                    currentSearch.currentMoveScore = evaluator.EvaluateMove(currentBestMove);
+                    currentSearch.valuesChanged = true;
+               }
+            }
+        }
+        return alpha;
+    }
+
+    public int NegaScoutSearch(int player, int depth, int alpha, int beta, int captureDepth = -1){
+        int eval;
+        searchCount++;
+        if (depth == 0) return CaptureSearch(player, captureDepth, alpha, beta);
+        List<EngineMove> moveset = GetOrderedMoveset(player);
+        int windowBeta = beta;
+        for(int i = 0; i<moveset.Count; i++){
+            UndoMoveData move = moveGenerator.MovePiece(moveset[i].Start, moveset[i].End);
+            eval = -NegaScoutSearch(player ^ 1, depth - 1, -windowBeta, -alpha, captureDepth);
+            if ((eval > alpha) &&  (eval < beta) && (i > 1)) { // score fits into window between alpha and beta, we need to re-search, always applies during last two plies
+                eval = -NegaScoutSearch(player ^ 1, depth - 1, -beta, -alpha, captureDepth);
+            }
+            moveGenerator.UndoMovePiece(move);
+            alpha = System.Math.Max(alpha, eval);
+            if (alpha >= beta){ //prune the branch
+                return alpha;
+            }
+            windowBeta = alpha + 1; //new null window
+        }
+        return alpha;
+    }
+
+    public int CaptureSearch(int player, int captureDepth, int alpha, int beta)
+    {
+        searchCount++;
+        int eval = evaluator.EvaluatePosition(player);
+        if (captureDepth == 0) return eval; //when captureDepth is negative this never happens
+        if (eval >= beta)
+        {
+            return beta;
+        }
+        if (eval > alpha)
+        { //in case the pos is good but all captures are bad
+            alpha = eval;
+        }
+        //searchCount++;
+        List<EngineMove> moves = GetCaptures(player);
+
+        for (int i = 0; i < moves.Count; i++)
+        {
+            UndoMoveData madeMove = moveGenerator.MovePiece(moves[i].Start, moves[i].End);
+            eval = -CaptureSearch(player ^ 1, captureDepth-1, -beta, -alpha);
+            moveGenerator.UndoMovePiece(madeMove);
+            if (eval >= beta) //prune the branch, move too good
+            {
+                return beta;
+            }
+            if (eval > alpha)
+            { //found new best move
+                alpha = eval;
+                //Debug.Log("neues alpha: " + maxValue.ToString());
+            }
+        }
+        return alpha;
+    }
+
+    //search wrappers
+    public EngineMove ChooseMove(int player, int depth, int captureDepth = -1)
+    {
+        originalDepth = depth; //important
+        searchCount = 0;
+        Search(player, depth, negativeInfinity, positiveInfinity, captureDepth);
+        currentSearch.currentSearchCount = searchCount;
+        currentSearch.valuesChanged = true;
+        return currentBestMove;
+    }
+
+    public int NegaScoutEval(int player, int depth, int captureDepth = -1)
+    {
+        originalDepth = depth; //important
+        searchCount = 0;
+        int eval = NegaScoutSearch(player, depth, negativeInfinity, positiveInfinity, captureDepth);
+        return eval;
+    }
+
+    public void ChooseMove()
+    {
+        nextFoundMove = ChooseMove(manager.playerOnTurn, manager.engineDepth, manager.captureDepth);
+        moveReady = true;
+    }
+
+    public void SearchEval()
+    {
+        NegaScoutEval(manager.playerOnTurn, manager.engineDepth, manager.captureDepth);
+        evalReady = true;
+    }
+
+    //running searches inside other threads
+    public void ThreadedMove()
+    {
+        Thread thread = new Thread(ChooseMove) { IsBackground = true };
+        currentSearch.searchStarted = true;
+        thread.Start();
+    }
+
+    public void ThreadedSearch()
+    {
+        Thread thread = new Thread(SearchEval) { IsBackground = true };
+        thread.Start();
+    }
+
+    //perft testing
     public int MoveGenCountTest(int depth, int playerToStart, bool reportMoves = false, ConsoleBehaviour console = null)
     {
         if (depth == 0) return 1;

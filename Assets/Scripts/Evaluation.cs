@@ -87,9 +87,7 @@ public class Evaluation
         return ((whiteBonus - blackBonus)) + bonusForDistanceBetweenKings;
     }
 
-
-    //static eval of given position from the players perspective
-    public int EvaluatePosition(int player)
+    public int EvaluatePosition(int player) //static eval of given position from the players perspective
     {
         int eval = MaterialValue();
         bool endgame = IsEndgame();
@@ -102,7 +100,7 @@ public class Evaluation
 
     //move evaluation, used for moveordering
     //move eval assumes the move has not been made yet
-    public int CaptureDelta(EngineMove move){
+    public int CaptureDelta(EngineMove move) {
         int startValue = pieceValues[PieceType(move.Piece)];
         int capturedPiece = moveGenerator.board[move.End];
         int endValue = pieceValues[PieceType(capturedPiece)];
@@ -110,12 +108,13 @@ public class Evaluation
         return endValue - startValue; // high values for taking good pieces with bad ones, negative for the reverse
     }
 
-    public int PositionDelta(EngineMove move, bool endgame){
+    public int PositionDelta(EngineMove move, bool endgame) {
         int before = PieceBonusTable.Read(move.Piece, move.Start,endgame);
         int after = PieceBonusTable.Read(move.Piece, move.End, endgame);
         return after - before; // high values for positioning pieces better, negative for worse positions
     }
-    public int EvaluateMove(EngineMove move){
+
+    public int EvaluateMove(EngineMove move) {
         int eval = 0;
         bool endgame = IsEndgame();
         eval += CaptureDelta(move);

@@ -6,7 +6,6 @@ public class SpaceHandler : MonoBehaviour
 {
     public BoardCreation boardCreation;
     public GameMngr manager;
-
     float thisX;
     float thisY;
 
@@ -70,7 +69,6 @@ public class SpaceHandler : MonoBehaviour
 
     public void UnHighlightAll()
     {
-        //Oh no dont loop through all of them
         for (int i = 0; i < 64; i++)
         {
             UnHighlightSpace(i);

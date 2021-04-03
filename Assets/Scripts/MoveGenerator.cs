@@ -132,7 +132,6 @@ public class MoveGenerator
         return output;
     }
 
-
     private BitBoard GetPawnSpaces(int space, bool capturesOnly = false)
     {
         int newSpace, newSpacePieceColor, doublePushRow;
@@ -164,8 +163,7 @@ public class MoveGenerator
         return output;
     }
 
-    //useful for finding attacked spaces
-    private BitBoard GetSpacesAttackedByPawn(int space)
+    private BitBoard GetSpacesAttackedByPawn(int space) //useful for finding attacked spaces
     {
         int newSpace, newSpacePieceColor;
         var output = new BitBoard();
@@ -212,7 +210,6 @@ public class MoveGenerator
         return output;
     }
 
-
     //completly useless wrappers, kept for completeness
     private BitBoard GetBishopSpaces(int space)
     {
@@ -245,7 +242,6 @@ public class MoveGenerator
     }
 
     //legal movegen and prerequisites
-
     public BitBoard GenerateAttackedSpaceBitboard(int player)
     {
         int currentPiece;
@@ -298,7 +294,6 @@ public class MoveGenerator
     {
         return (player == white) ? whiteKingPosition : blackKingPosition;
     }
-
     
     public bool IsPlayerInCheck(int player)
     {
@@ -390,7 +385,6 @@ public class MoveGenerator
     }
 
     //moving pieces and undoing moves
-
     public UndoMoveData MovePiece(int start, int end)
     {
         //variables
@@ -422,11 +416,6 @@ public class MoveGenerator
             // no castling after moving kings
             gameData.castling[shortCastlingIndex] = false;
             gameData.castling[longCastlingIndex] = false;
-            /*foreach (int index in new int[] { shortCastlingIndex, longCastlingIndex }) //no castling after moving kings
-            {
-                if (gameData.castling[index]) previousPositions[0][index] = 1;
-                gameData.castling[index] = false;
-            }*/
             if (color == black) blackKingPosition = end;
             else if (color == white) whiteKingPosition = end;
         }
@@ -494,13 +483,9 @@ public class MoveGenerator
         if ((SpaceY(end) == 7 || SpaceY(end) == 0) && type == pawn) // pawn of own color never will go backwards
         {
             board.TurnPawnToQueen(end, color);
-            //board.UpdateFullSpaces(); //for safety, bugs out when i dont
         }
 
-        //ultra mega super slow
         SetAttackedSpaceData();
-        //SetKingPositions();
-        //board.UpdateFullSpaces();
         return undoData;
     }
 

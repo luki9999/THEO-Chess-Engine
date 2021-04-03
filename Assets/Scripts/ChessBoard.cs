@@ -6,21 +6,26 @@ using System;
 [Serializable]
 public class BitBoard
 {
+    //core
     [SerializeField]ulong boardInt;
 
-
+    //init
     public BitBoard(ulong newBoardInt = 0)
     {
         boardInt = newBoardInt;
     }
+
+    //operators
     public static BitBoard operator +(BitBoard left, BitBoard right) // combines 2 boards
     {
         return new BitBoard(left.boardInt | right.boardInt);
     }
+
     public static BitBoard operator &(BitBoard left, BitBoard right) // usable for filtering
     {
         return new BitBoard(left.boardInt & right.boardInt);
     }
+
     public static BitBoard operator ~(BitBoard input) // inverts board
     {
         return new BitBoard(~input.boardInt);
@@ -36,6 +41,13 @@ public class BitBoard
         return input.boardInt;
     }
 
+    public bool Equals(BitBoard otherBoard)
+    {
+        if (boardInt == otherBoard.boardInt) return true;
+        else return false;
+    }
+
+    //getting and setting
     public bool this[int index]
     {
         get => GetBoolAtSpace(index);
@@ -59,12 +71,7 @@ public class BitBoard
         }
     }
 
-    public bool Equals(BitBoard otherBoard)
-    {
-        if (boardInt == otherBoard.boardInt) return true;
-        else return false;
-    }
-
+    //converters
     public override string ToString()
     {
         var fullString = Convert.ToString((long)boardInt, 2).PadLeft(64, '0');
@@ -77,12 +84,12 @@ public class BitBoard
         return string.Join("\n", partArray);
     }
 
-    //this is a bit shitty but oh well...
-    public override int GetHashCode()
+    public override int GetHashCode() //this is a bit shitty but oh well...
     {
         return (int)boardInt;
     }
 
+    //methods, higher level stuff
     public int CountActive()
     {
         int count = 0;
@@ -110,26 +117,24 @@ public class BitBoard
 [Serializable]
 public class ChessBoard
 {
-    public BitBoard[] piecePositionBoards; //white pawns, white knights, white bishops, white rooks, white queens, white kings, after that same for black
-    public BitBoard fullSpaces; // Every PiecePosBoard added together
-
-    //use these instead of numbers!
+    //constants
     public const int pawn = 1, knight = 2, bishop = 3, rook = 4, queen = 5, king = 6;
     public const int whitePiece = 8, blackPiece = 16;
     public const int white = 0, black = 1;
-
     public static readonly int[] possiblePieces = new int[]
     {
         pawn | whitePiece, knight | whitePiece, bishop | whitePiece, rook | whitePiece, queen | whitePiece, king | whitePiece,
         pawn | blackPiece, knight | blackPiece, bishop | blackPiece, rook | blackPiece, queen | blackPiece, king | blackPiece
     };
-
     public static readonly char[] pieceNames = new char[] { ' ', 'N', 'B', 'R', 'Q', 'K' };
     public static readonly char[] fileLetters = new char[] { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h' };
     public static readonly char[] rankNumbers = new char[] { '1', '2', '3', '4', '5', '6', '7', '8' };
 
     static readonly BitBoard whiteSpaces = (BitBoard)0b10101010_01010101_10101010_01010101_10101010_01010101_10101010_01010101;
 
+    //core
+    public BitBoard[] piecePositionBoards; //white pawns, white knights, white bishops, white rooks, white queens, white kings, after that same for black
+    public BitBoard fullSpaces; // Every PiecePosBoard added together
 
     //castling data 
     //short white, long white, short black, short white
@@ -138,7 +143,7 @@ public class ChessBoard
     public static readonly int[] rooksAfter = new int[] {5, 3, 61, 59};
     public static readonly int[] kingsAfter = new int[] {6, 2, 62, 58};
 
-
+    //init
     public ChessBoard()
     {
         piecePositionBoards = new BitBoard[12];
@@ -147,11 +152,10 @@ public class ChessBoard
         {
             piecePositionBoards[i] = new BitBoard();
         }
-        //remove this once you are using the new stuff
-        //SomeTests();
-    }
-    //operators and nice stuff
 
+    }
+
+    //operators and nice stuff
     public bool Equals(ChessBoard otherBoard)
     {
         for (int i = 0; i < 12; i++)
@@ -189,21 +193,6 @@ public class ChessBoard
         throw new IndexOutOfRangeException("Full spaces are not updated correctly or there is a beer bottle on the board.");
     }
 
-    /*void SetPieceAtPos(int position, int piece)
-    {
-        for (int i = 0; i < 12; i++)
-        {
-            piecePositionBoards[i][position] = false;
-            fullSpaces[position] = false;
-        }
-        if (piece != 0)
-        {
-            int pieceIndex = PieceColor(piece) * 6 + (PieceType(piece) - 1);
-            piecePositionBoards[pieceIndex][position] = true;
-            fullSpaces[position] = true;
-        }
-    }*/
-
     void SetPieceAtPos(int position, int piece)
     {
         int prevPiece = GetPieceAtPos(position);
@@ -213,6 +202,7 @@ public class ChessBoard
         fullSpaces[position] = (piece != 0);
     }
 
+    //hashing, used for position history
     public ulong Hash()
     {
         ulong cutoffSum = 0, bitboardSum = 0;
@@ -226,7 +216,7 @@ public class ChessBoard
         return bitboardSum + cutoffSum;
     }
 
-    //some getters
+    //some static getters
     public static int PieceColor(int piece)
     {
         //ok that was important
@@ -240,11 +230,11 @@ public class ChessBoard
         return piece & 0b111;
     }
 
-    public static int PieceInt(int pieceType, int color){
+    public static int PieceInt(int pieceType, int color)
+    {
         return pieceType | ((color + 1) << 3);
     }
 
-    //TODO make function to move specific piece without looping through all boards, has to be very fast
     public static int BitBoardIndex(int piece)
     {
         return (piece & 0b111) - 1 + 6 * (piece >> 4);
@@ -303,6 +293,7 @@ public class ChessBoard
         return pieceNames[PieceType(piece) - 1];
     }
 
+    //non static getters, mostly used for eval
     public int PieceCount(int piece)
     {
         int index = BitBoardIndex(piece);
@@ -329,6 +320,7 @@ public class ChessBoard
         return blackPieces.CountActive();
     }
 
+    //faster methods for board acessing
     public bool Contains(int space, int piece)
     {
         return piecePositionBoards[BitBoardIndex(piece)][space];
@@ -345,17 +337,9 @@ public class ChessBoard
         return output;
     }
 
-    //methods
-
-    public void UpdateFullSpaces()
+    //methods to make moving and undoing faster 
+    public void CreatePiece(int position, int piece)
     {
-        for (int i = 0; i < 12; i++)
-        {
-            fullSpaces += piecePositionBoards[i];
-        }
-    }
-
-    public void CreatePiece(int position, int piece){
         piecePositionBoards[BitBoardIndex(piece)][position] = true;
         fullSpaces[position] = true;
     }
@@ -395,19 +379,5 @@ public class ChessBoard
         piecePositionBoards[-6*(color-1)][(-8 + 16 * color) + pos] = false; // 6 for white (black pawn), 0 for black (white pawn) and -8 for white, 8 for black 
         fullSpaces[(-8 + 16 * color) + pos] = false;
         return (-8 + 16 * color) + pos;
-    }
-    //tests and shit
-
-    void SomeTests()
-    {
-        Debug.Log("The piece 12 is of color " + PieceColor(12).ToString() + " and of type " + PieceType(12).ToString());
-        piecePositionBoards[3][10] = true;
-        Debug.Log(piecePositionBoards[3][10].ToString());
-        Debug.Log(piecePositionBoards[3].ToString());
-        BitBoard test = (BitBoard)0b01010101_01010101_01010101_01010101_01010101_01010101_01010101_01010101;
-        BitBoard empty = new BitBoard();
-        Debug.Log(test);
-        Debug.Log(empty + ~test);
-        Debug.Log(test + ~test);
     }
 }

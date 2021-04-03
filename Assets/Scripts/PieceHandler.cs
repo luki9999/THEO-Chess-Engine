@@ -7,114 +7,39 @@ using static ChessBoard;
 
 public class PieceHandler : MonoBehaviour
 {
-    [SerializeField]
-    GameObject[] pieceObjects;
-
-    [SerializeField]
-    Dictionary<int, GameObject> piecePositions;
-
-    public HoverPieceCursor cursor;
+    //core + linking 
+    [SerializeField] Dictionary<int, GameObject> piecePositions;
     public SpaceHandler spaceHandler;
     public GameMngr manager;
+    MoveGenerator moveGenerator;
 
+    //piece creation
+    [SerializeField] GameObject[] pieceObjects;
+    float pieceSize;
+
+    //picking up pieces
+    public GameObject pieceUnderCursor;
+    public Color highlightColor;
+
+    //drag and drop
     GameObject selectedPiece;
     Vector3 transformDelta;
     List<int> possibleMovesForClickedPiece;
-     
-    MoveGenerator moveGenerator;
+    bool inDrag;
 
+    //piece moving
     int startSpace;
     int endSpace;
-
-    float pieceSize;
-
     bool respectTurn;
+
+    //init
     void Awake()
     {
         moveGenerator = manager.moveGenerator;
         respectTurn = manager.dragAndDropRespectsTurns;
         pieceSize = pieceObjects[0].transform.localScale.x;
         piecePositions = new Dictionary<int, GameObject>();
-    }
-
-    void Update()
-    {
-        DragDrop(respectTurn);
-    }
-
-    void DragDrop(bool respectTurn = false)
-    {
-        if (Input.GetMouseButtonDown(0) && cursor.hoveredPiece != null)
-        {
-            selectedPiece = cursor.hoveredPiece;
-            startSpace = spaceHandler.WorldSpaceToChessSpace(selectedPiece.transform.position);
-
-            if (!respectTurn || manager.playerOnTurn == ChessBoard.PieceColor(moveGenerator.board[startSpace])){
-
-                possibleMovesForClickedPiece = moveGenerator.GetLegalMovesForPiece(startSpace).GetActive();
-                spaceHandler.HighlightMoveList(possibleMovesForClickedPiece, Color.cyan, 0.5f);
-
-                transformDelta = selectedPiece.transform.position - cursor.transform.position;
-                selectedPiece.GetComponent<BoxCollider2D>().enabled = false;
-                selectedPiece.GetComponent<SpriteRenderer>().sortingOrder = 1;
-
-                cursor.inDrag = true; }
-            //Oh god please no one else write shit like this this is an embarassment
-            else
-            {
-                selectedPiece = null;
-            }
-        }
-        else if (Input.GetMouseButton(0) && selectedPiece != null)
-        {
-            selectedPiece.transform.position = cursor.transform.position + transformDelta;
-        }
-        else if (Input.GetMouseButtonUp(0) && selectedPiece != null)
-        {
-            endSpace = SnapToSpace(selectedPiece, startSpace, possibleMovesForClickedPiece);
-            spaceHandler.UnHighlightAll(); // Doesnt need to be fast :D
-            selectedPiece.GetComponent<BoxCollider2D>().enabled = true;
-            selectedPiece.GetComponent<SpriteRenderer>().sortingOrder = 0;
-
-            if (startSpace != endSpace)
-            {
-                manager.MakeMoveNoGraphics(startSpace, endSpace);
-            }
-
-            selectedPiece = null;
-            cursor.inDrag = false;
-        }
-    }
-
-    int SnapToSpace(GameObject piece, int startSpace, List<int> possibleSpaces)
-    {
-        int space = spaceHandler.WorldSpaceToChessSpace(piece.transform.position);
-        //resetting the piece in case of an invalid move
-        if (space < 0 || space > 63 || space == startSpace || !possibleSpaces.Contains(space))
-        {
-            piece.transform.position = spaceHandler.ChessSpaceToWorldSpace(startSpace);
-            return startSpace;
-        }
-        //taking a piece, only one piece per space
-        if (GetPieceAtPos(space) != null)
-        {
-            DisablePiece(space);
-        }
-        //actual snapping
-        piece.transform.position = spaceHandler.ChessSpaceToWorldSpace(space);
-        piecePositions.Remove(startSpace);
-        piecePositions[space] = piece;
-        return space;
-    }
-
-    public void ClearBoard()
-    {
-        piecePositions = new Dictionary<int, GameObject>();
-        GameObject[] pieces = GameObject.FindGameObjectsWithTag("Piece");
-        foreach (GameObject piece in pieces)
-        {
-            DestroyImmediate(piece);
-        }
+        pieceUnderCursor = null;
     }
 
     public void LayOutPieces(ChessBoard board)
@@ -133,10 +58,67 @@ public class PieceHandler : MonoBehaviour
         }
     }
 
+    //finding certain pieces
+    public GameObject GetPieceAtPos(int position)
+    {
+        if (piecePositions.ContainsKey(position))
+        {
+            return piecePositions[position];
+        }
+        return null;
+    }
+
+    public GameObject GetPieceAtCursor(){
+        Vector2 mouseKoordsInWorld = new Vector2(Camera.main.ScreenToWorldPoint(Input.mousePosition).x, Camera.main.ScreenToWorldPoint(Input.mousePosition).y);
+        int piecePosition = spaceHandler.WorldSpaceToChessSpace(mouseKoordsInWorld);
+        return GetPieceAtPos(piecePosition);
+    }
+
+    public Vector2 CursorPos() {
+        return new Vector2(Camera.main.ScreenToWorldPoint(Input.mousePosition).x, Camera.main.ScreenToWorldPoint(Input.mousePosition).y);
+    }
+
+    public int CursorSpace(){
+        return spaceHandler.WorldSpaceToChessSpace(CursorPos());
+    }
+
+    //reloading pieces
+    public void ClearBoard()
+    {
+        piecePositions = new Dictionary<int, GameObject>();
+        GameObject[] pieces = GameObject.FindGameObjectsWithTag("Piece");
+        foreach (GameObject piece in pieces)
+        {
+            DestroyImmediate(piece);
+        }
+    }
+
     public void ReloadPieces()
     {
         ClearBoard();
         LayOutPieces(moveGenerator.board);
+    }
+
+    //moving pieces
+    public void DisablePiece(int position)
+    {
+        if(GetPieceAtPos(position) == null) return;
+        GetPieceAtPos(position).SetActive(false);
+        piecePositions.Remove(position);
+    }
+
+    public void ChangePieceSprite(int position, Sprite newSprite)
+    {
+        GameObject piece = GetPieceAtPos(position);
+        if (piece == null) return;
+        SpriteRenderer renderer = piece.GetComponent<SpriteRenderer>();
+        renderer.sprite = newSprite;
+    }
+
+    public void ChangePieceToQueen(int position, int color)
+    {
+        if (color == ChessBoard.black) ChangePieceSprite(position, pieceObjects[10].GetComponent<SpriteRenderer>().sprite);
+        else ChangePieceSprite(position, pieceObjects[4].GetComponent<SpriteRenderer>().sprite);
     }
 
     public void MovePieceSprite(int oldSpace, int newSpace)
@@ -187,33 +169,91 @@ public class PieceHandler : MonoBehaviour
         StartCoroutine(PieceAnimationCoroutine(oldSpace, newSpace, animTime));
     }
 
-    public void DisablePiece(int position)
-    {
-        if(GetPieceAtPos(position) == null) return;
-        GetPieceAtPos(position).SetActive(false);
-        piecePositions.Remove(position);
-    }
 
-    public void ChangePieceSprite(int position, Sprite newSprite)
+    //drag and drop functionality
+    int SnapToSpace(GameObject piece, int startSpace, List<int> possibleSpaces)
     {
-        GameObject piece = GetPieceAtPos(position);
-        if (piece == null) return;
-        SpriteRenderer renderer = piece.GetComponent<SpriteRenderer>();
-        renderer.sprite = newSprite;
-    }
-
-    public void ChangePieceToQueen(int position, int color)
-    {//PLEASE FOR THE LOVE OF GOD CHANGE THAT AGAIN
-        if (color == ChessBoard.black) ChangePieceSprite(position, pieceObjects[10].GetComponent<SpriteRenderer>().sprite);
-        else ChangePieceSprite(position, pieceObjects[4].GetComponent<SpriteRenderer>().sprite);
-    }
-
-    public GameObject GetPieceAtPos(int position)
-    {
-        if (piecePositions.ContainsKey(position))
+        int space = spaceHandler.WorldSpaceToChessSpace(piece.transform.position);
+        //resetting the piece in case of an invalid move
+        if (space < 0 || space > 63 || space == startSpace || !possibleSpaces.Contains(space))
         {
-            return piecePositions[position];
+            piece.transform.position = spaceHandler.ChessSpaceToWorldSpace(startSpace);
+            return startSpace;
         }
-        return null;
+        //taking a piece, only one piece per space
+        if (GetPieceAtPos(space) != null)
+        {
+            DisablePiece(space);
+        }
+        //actual snapping
+        piece.transform.position = spaceHandler.ChessSpaceToWorldSpace(space);
+        piecePositions.Remove(startSpace);
+        piecePositions[space] = piece;
+        return space;
+    }
+
+    void DragDrop(bool respectTurn = false)
+    {
+        if (Input.GetMouseButtonDown(0) && GetPieceAtCursor() != null)
+        {
+            selectedPiece = GetPieceAtCursor();
+            startSpace = spaceHandler.WorldSpaceToChessSpace(selectedPiece.transform.position);
+            if (!respectTurn || manager.playerOnTurn == ChessBoard.PieceColor(moveGenerator.board[startSpace])){
+                selectedPiece.GetComponent<SpriteRenderer>().color = Color.Lerp(Color.white, highlightColor, 0.5f); 
+                possibleMovesForClickedPiece = moveGenerator.GetLegalMovesForPiece(startSpace).GetActive();
+                spaceHandler.HighlightMoveList(possibleMovesForClickedPiece, Color.cyan, 0.5f);
+                spaceHandler.HighlightSpace(startSpace, Color.green, 0.5f);
+                transformDelta = selectedPiece.transform.position - (Vector3) CursorPos();
+                selectedPiece.GetComponent<BoxCollider2D>().enabled = false;
+                selectedPiece.GetComponent<SpriteRenderer>().sortingOrder = 1;
+
+                inDrag = true; }
+            //Oh god please no one else write shit like this this is an embarassment
+            else
+            {
+                selectedPiece = null;
+            }
+        }
+        else if (Input.GetMouseButton(0) && selectedPiece != null)
+        {
+            selectedPiece.transform.position = (Vector3) CursorPos() +  transformDelta;
+        }
+        else if (Input.GetMouseButtonUp(0) && selectedPiece != null)
+        {
+            endSpace = SnapToSpace(selectedPiece, startSpace, possibleMovesForClickedPiece);
+            spaceHandler.UnHighlightAll(); // Doesnt need to be fast :D
+            selectedPiece.GetComponent<SpriteRenderer>().color = Color.white; 
+            
+            if(moveGenerator.IsPlayerInCheck(manager.playerOnTurn)) { //oh god nooo
+                int kingSpace = (manager.playerOnTurn == white) ? moveGenerator.whiteKingPosition : moveGenerator.blackKingPosition;
+                spaceHandler.HighlightSpace(kingSpace, Color.red, 0.5f);
+            }
+            if (manager.lastMove.movedPiece != 0) {
+                spaceHandler.HighlightSpace(manager.lastMove.start, Color.yellow, 0.7f);
+                spaceHandler.HighlightSpace(manager.lastMove.end, Color.yellow, 0.7f);
+            }
+            selectedPiece.GetComponent<BoxCollider2D>().enabled = true;
+            selectedPiece.GetComponent<SpriteRenderer>().sortingOrder = 0;
+
+            if (startSpace != endSpace)
+            {
+                manager.MakeMoveNoGraphics(startSpace, endSpace);
+            }
+
+            selectedPiece = null;
+            inDrag = false;
+        }
+    }
+
+    void Update()
+    {
+        if (pieceUnderCursor != null && ChessBoard.PieceColor(manager.moveGenerator.board[CursorSpace()]) == manager.playerOnTurn && !inDrag) { //ouch
+            pieceUnderCursor.GetComponent<SpriteRenderer>().color = Color.Lerp(Color.white, highlightColor, 0.5f);
+        }
+        if ((GetPieceAtCursor() != pieceUnderCursor || inDrag) && pieceUnderCursor != null) { //piece just got unhighlighted
+            pieceUnderCursor.GetComponent<SpriteRenderer>().color = Color.white;
+        }
+        pieceUnderCursor = GetPieceAtCursor();
+        DragDrop(respectTurn);
     }
 }

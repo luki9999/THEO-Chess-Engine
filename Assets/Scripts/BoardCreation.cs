@@ -5,27 +5,23 @@ using UnityEngine.Events;
 
 public class BoardCreation : MonoBehaviour
 {
+    //linking
+    public GameMngr manager;
+    public SpaceHandler spaceHandler;
+    [HideInInspector] public UnityEvent creationFinished = new UnityEvent();
+
+    //inputs
     public Color whiteColor;
     public Color blackColor;
     public GameObject space;
-    public GameMngr manager;
-
+    
+    //core
     public List<GameObject> spaces;
 
-    public UnityEvent creationFinished = new UnityEvent();
-
-    public SpaceHandler spaceHandler;
-    // Start is called before the first frame update
     void Start()
     {
         GenerateBoard();
         creationFinished.Invoke();
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
     }
 
     public void GenerateBoard()

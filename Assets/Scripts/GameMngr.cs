@@ -21,36 +21,43 @@ public enum EngineState{
 
 public class GameMngr : MonoBehaviour
 {
+    //other scripts
     public MoveGenerator moveGenerator;
     public PieceHandler pieceHandler;
     public SpaceHandler spaceHandler;
     public BoardCreation boardCreation;
     public ConsoleBehaviour console;
+
+    //graphics + init
     public bool boardExists = false;
-    public bool dragAndDropRespectsTurns;
-    public GameObject cursor;
-
     public bool boardFlipped;
+    public float moveAnimationTime;
 
+    //game flow
+    public GameState currentState;
+    public int playerOnTurn;
+    public UndoMoveData lastMove;
+    public bool dragAndDropRespectsTurns;
     public bool gameOver;
     public int movesWithoutPawn = 0;
 
+    //events
+    [HideInInspector] public UnityEvent moveMade = new UnityEvent();
+    [HideInInspector] public UnityEvent gameEnd = new UnityEvent();
+
+    //engine
+    public Engine engine;
     public EngineState engineState;
     public int engineDepth;
     public int captureDepth;
+    public int perftTestDepth;
 
-    public int playerOnTurn;
-
+    
+    //history
     [HideInInspector] public List<UndoMoveData> moveHistory;
     [SerializeField] public List<ulong> positionHistory;
 
-    public GameState currentState;
-
-    public float moveAnimationTime;
-
-    public int perftTestDepth;
-
-    [HideInInspector]
+    //test positions
     public static readonly string startingPosString = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
     public static readonly string pawnTestPos = "8/8/6p1/7P/8/2p1p3/3P4/8 w - - 0 1";
     public static readonly string knightTestPos = "8/8/2p5/5p2/3N4/1P6/4P3/8 w - - 0 1";
@@ -59,7 +66,6 @@ public class GameMngr : MonoBehaviour
     public static readonly string queenTestPos = "8/p2p2p1/8/8/3Q4/8/1P1P1P2/8 w - - 0 1";
     public static readonly string kingTestPos = "8/8/8/3p4/2pKP3/3P4/8/8 w - - 0 1";
     public static readonly string middleGameTestPos = "r4rk1/p3bppp/b1pp1n2/P1q1p3/4P3/2N1B1P1/1PP2PBP/R2QR1K1 b - - 2 13";
-
     public static readonly string perftTest1 = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ";
     public static readonly string perftTest2 = "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - ";
     public static readonly string perftTest3 = "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1";
@@ -67,15 +73,7 @@ public class GameMngr : MonoBehaviour
     public static readonly string perftTest5 = "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10";
 
 
-    UndoMoveData lastMove;
-    public Engine engine;
-    [HideInInspector]
-    public UnityEvent moveMade = new UnityEvent();
-    [HideInInspector]
-    public UnityEvent gameEnd = new UnityEvent();
-
-    //TODO make this a singleton
-
+    //init and game starting
     void Awake()
     {
         moveGenerator = new MoveGenerator();
@@ -90,67 +88,34 @@ public class GameMngr : MonoBehaviour
         positionHistory = new List<ulong>();
         boardCreation.creationFinished.AddListener(OnBoardFinished);
         engineState = EngineState.Off;
-        //SpeedTest.TestFunctionSpeed(() => moveGenerator.board[10] = whitePiece | rook, 10000000);
     }
 
     public void OnBoardFinished()
     {
         boardExists = true;
         StartChessGame();
-        
         engine = new Engine(moveGenerator);
-        //MakeMoveAnimated(4, 1, 4, 3);
     }
 
-    public void UndoLastMove()
+    public void LoadPosition(string fen)
     {
-        if (moveHistory.Count == 0) return;
-        moveGenerator.UndoMovePiece(moveHistory.Last());
-        moveHistory.RemoveAt(moveHistory.Count - 1);
-        positionHistory.RemoveAt(positionHistory.Count - 1);
-        pieceHandler.ReloadPieces();
-        playerOnTurn = (playerOnTurn == white) ? black : white;
-    }
-
-    void OnMove()
-    {
-        currentState = CurrentState();
-        moveHistory.Add(lastMove);
-        positionHistory.Add(moveGenerator.board.Hash());
-        if (PieceType(lastMove.movedPiece) == pawn){
-            movesWithoutPawn = 0;
-        } else{
-            movesWithoutPawn ++;
-        }
-        if(currentState == GameState.Mate || currentState == GameState.Draw)
-        {
-            gameEnd.Invoke();
-            gameOver = true;
-        }
-        if (gameOver) return;
-        if (engineState == EngineState.Black && playerOnTurn == black)
-        {
-            engine.ThreadedMove();
-        } else if (engineState == EngineState.White && playerOnTurn == white)
-        {
-            engine.ThreadedMove();
-        }
-    }
-
-    void OnGameOver()
-    {
-        console.Print("The game ended.");
+        pieceHandler.ClearBoard();
+        spaceHandler.UnHighlightAll();
+        moveGenerator.LoadFEN(fen);
+        gameOver = false;
+        moveHistory = new List<UndoMoveData>();
+        positionHistory = new List<ulong>() { moveGenerator.board.Hash() };
+        playerOnTurn = moveGenerator.gameData.playerOnTurn;
         engineState = EngineState.Off;
-        string playerStr = (playerOnTurn == white) ? "White" : "Black";
-        if (moveGenerator.IsPlayerInCheck(playerOnTurn))
-        {
-            console.Print(playerStr + " is checkmate. Type restart to reset board.");
-        }
-        else
-        {
-            console.Print("This was a draw. Type restart to reset board.");
-        }
+        pieceHandler.LayOutPieces(moveGenerator.board);
     }
+
+    public void StartChessGame()
+    {
+        LoadPosition(startingPosString);
+    }
+
+    // move making (sync between board and graphics)
 
     public void MakeMoveNoGraphics(int start, int end)
     {
@@ -202,6 +167,24 @@ public class GameMngr : MonoBehaviour
         MakeMove(SpaceNumberFromString(startString), SpaceNumberFromString(endString));
     }
 
+    public void UndoLastMove()
+    {
+        if (moveHistory.Count == 0) return;
+        moveGenerator.UndoMovePiece(moveHistory.Last());
+        moveHistory.RemoveAt(moveHistory.Count - 1);
+        positionHistory.RemoveAt(positionHistory.Count - 1);
+        pieceHandler.ReloadPieces();
+        playerOnTurn = (playerOnTurn == white) ? black : white;
+    }
+
+    public void FlipBoard()
+    {
+        pieceHandler.ClearBoard();
+        boardFlipped = !boardFlipped;
+        pieceHandler.LayOutPieces(moveGenerator.board);
+    }
+
+    //event handling (what happens after moves)
     public GameState CurrentState()
     {
         if(positionHistory.Count(x => x == moveGenerator.board.Hash()) == 3) return GameState.Draw; //draw after 3 fold repetion
@@ -215,9 +198,56 @@ public class GameMngr : MonoBehaviour
         return GameState.Running;
     }
 
+    void OnMove()
+    {
+        currentState = CurrentState();
+        spaceHandler.UnHighlightAll();
+        if(moveGenerator.IsPlayerInCheck(playerOnTurn)) { 
+            int kingSpace = (playerOnTurn == white) ? moveGenerator.whiteKingPosition : moveGenerator.blackKingPosition;
+            spaceHandler.HighlightSpace(kingSpace, Color.red, 0.5f);
+        }
+        moveHistory.Add(lastMove);
+        spaceHandler.HighlightSpace(lastMove.start, Color.yellow, 0.7f);
+        spaceHandler.HighlightSpace(lastMove.end, Color.yellow, 0.7f);
+        positionHistory.Add(moveGenerator.board.Hash());
+        if (PieceType(lastMove.movedPiece) == pawn){
+            movesWithoutPawn = 0;
+        } else{
+            movesWithoutPawn ++;
+        }
+        if(currentState == GameState.Mate || currentState == GameState.Draw)
+        {
+            gameEnd.Invoke();
+            gameOver = true;
+        }
+        if (gameOver) return;
+        if (engineState == EngineState.Black && playerOnTurn == black)
+        {
+            engine.ThreadedMove();
+        } else if (engineState == EngineState.White && playerOnTurn == white)
+        {
+            engine.ThreadedMove();
+        }
+    }
+
+    void OnGameOver()
+    {
+        console.Print("The game ended.");
+        engineState = EngineState.Off;
+        string playerStr = (playerOnTurn == white) ? "White" : "Black";
+        if (moveGenerator.IsPlayerInCheck(playerOnTurn))
+        {
+            console.Print(playerStr + " is checkmate. Type restart to reset board.");
+        }
+        else
+        {
+            console.Print("This was a draw. Type restart to reset board.");
+        }
+    }
+
+    //data sharing with engine and making engine moves
     void Update()
     {
-        if (!cursor.activeSelf) cursor.SetActive(true);
         if(engine.currentSearch.searchStarted){
             console.Print(" ");
             engine.currentSearch.searchStarted = false;
@@ -251,6 +281,7 @@ public class GameMngr : MonoBehaviour
         }
     }
 
+    //tests and stuff
     public void MoveGenerationTest(int piece)
     {
         switch (piece)
@@ -293,12 +324,6 @@ public class GameMngr : MonoBehaviour
         }
     }
 
-    public void AttackedSpaceGenerationTest()
-    {
-        LoadPosition(middleGameTestPos);
-        ShowAttackedSpaces();
-    }
-
     public void ShowAttackedSpaces()
     {
         spaceHandler.UnHighlightAll();
@@ -308,33 +333,10 @@ public class GameMngr : MonoBehaviour
         spaceHandler.HighlightMoveList(attackedSpacesWhite, Color.green, 0.25f);
     }
 
-    public void StartChessGame()
+    public void AttackedSpaceGenerationTest()
     {
-        LoadPosition(startingPosString);
-    }
-
-    public void LoadPosition(string fen)
-    {
-        pieceHandler.ClearBoard();
-        spaceHandler.UnHighlightAll();
-        moveGenerator.LoadFEN(fen);
-        gameOver = false;
-        moveHistory = new List<UndoMoveData>();
-        positionHistory = new List<ulong>() { moveGenerator.board.Hash() };
-        playerOnTurn = moveGenerator.gameData.playerOnTurn;
-        engineState = EngineState.Off;
-        pieceHandler.LayOutPieces(moveGenerator.board);
-        /*for (int i = 0; i < 12; i++)
-        {
-            print(moveGenerator.board.piecePositionBoards[i]);
-        }*/
-    }
-
-    public void FlipBoard()
-    {
-        pieceHandler.ClearBoard();
-        boardFlipped = !boardFlipped;
-        pieceHandler.LayOutPieces(moveGenerator.board);
+        LoadPosition(middleGameTestPos);
+        ShowAttackedSpaces();
     }
 
     public void EngineMoveCountTest()
