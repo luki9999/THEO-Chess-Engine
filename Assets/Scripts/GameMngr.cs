@@ -269,9 +269,9 @@ public class GameMngr : MonoBehaviour
         {
             string playerStr = (playerOnTurn == white) ? "W: " : "B: ";
             console.ReplaceLast(playerStr + engine.currentSearch.currentBestMoveName.PadRight(6)
-                + " | Static: " + engine.currentSearch.currentBestEval.ToString().PadLeft(7) 
-                + " | Delta: " + engine.currentSearch.currentMoveScore.ToString().PadLeft(7)
-                + " | Count: " + engine.currentSearch.currentSearchCount.ToString().PadLeft(12));
+                + " | Static: " + engine.currentSearch.currentBestEval.ToString("N0").PadLeft(7) 
+                + " | Delta: " + engine.currentSearch.currentMoveScore.ToString("N0").PadLeft(7)
+                + " | Count: " + engine.currentSearch.currentSearchCount.ToString("N0").PadLeft(12));
             engine.currentSearch.valuesChanged = false;
         }
         if (engine.moveReady)

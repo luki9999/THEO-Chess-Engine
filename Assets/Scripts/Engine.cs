@@ -364,7 +364,7 @@ public class Engine
             output += MoveGenCountTest(depth - 1, playerToStart ^ 1);
             moveGenerator.UndoMovePiece(thisMove);
             if (depth == originalDepth) Debug.Log(moveGenerator.MoveName(move.Start, move.End, true) + "   " + (output-lastOutput).ToString("N0"));
-            if (depth == originalDepth && console != null) console.Print(moveGenerator.MoveName(move.Start, move.End, true).PadRight(7) + (output - lastOutput).ToString("N0"));
+            if (depth == originalDepth && console != null) console.Line(moveGenerator.MoveName(move.Start, move.End, true).PadRight(7) + (output - lastOutput).ToString("N0"));
         }
 
         return output;
