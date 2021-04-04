@@ -59,11 +59,11 @@ public class SpaceHandler : MonoBehaviour
         spaceToUnHighlight.GetComponent<SpriteRenderer>().color = color;
     }
 
-    public void HighlightMoveList(List<int> moveList, Color color, float lerpValue = 1)
+    public void HighlightSpaceList(List<int> spaces, Color color, float lerpValue = 1)
     {
-        foreach (int move in moveList)
+        foreach (int space in spaces)
         {
-            HighlightSpace(move, color, lerpValue);
+            HighlightSpace(space, color, lerpValue);
         }
     }
 

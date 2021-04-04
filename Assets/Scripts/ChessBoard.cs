@@ -90,7 +90,7 @@ public class BitBoard
     }
 
     //methods, higher level stuff
-    public int CountActive()
+    public int CountActive() // SLOW: Dont loop over the entire board
     {
         int count = 0;
         for (int i = 0; i < 64; i++)
@@ -100,7 +100,7 @@ public class BitBoard
         return count;
     }
 
-    public List<int> GetActive()
+    public List<int> GetActive() // SLOW: There are way faster algos for that
     {
         var output = new List<int>();
         ulong currentInt = boardInt;
@@ -135,6 +135,7 @@ public class ChessBoard
     //core
     public BitBoard[] piecePositionBoards; //white pawns, white knights, white bishops, white rooks, white queens, white kings, after that same for black
     public BitBoard fullSpaces; // Every PiecePosBoard added together
+    public BitBoard colorMask; // All black pieces
 
     //castling data 
     //short white, long white, short black, short white
@@ -148,6 +149,7 @@ public class ChessBoard
     {
         piecePositionBoards = new BitBoard[12];
         fullSpaces = new BitBoard();
+        colorMask = new BitBoard();
         for (int i = 0; i < 12; i++)
         {
             piecePositionBoards[i] = new BitBoard();
@@ -199,7 +201,9 @@ public class ChessBoard
         if (piece == prevPiece) return; //piece is already there
         if (prevPiece != 0) piecePositionBoards[BitBoardIndex(prevPiece)][position] = false;
         if (piece != 0) piecePositionBoards[BitBoardIndex(piece)][position] = true;
+        
         fullSpaces[position] = (piece != 0);
+        colorMask[position] = (piece >> 4) == 1;
     }
 
     //hashing, used for position history
@@ -337,47 +341,64 @@ public class ChessBoard
         return output;
     }
 
+    public BitBoard PieceSpacesOfColor(int color){
+        if (color == black) return colorMask & fullSpaces;
+        else if (color == white) return ~colorMask & fullSpaces;
+        else throw new System.ArgumentException("Invalid value for argument color. Use 0 (white) or 1 (black)");
+    }
+
+    public List<int> FindPiecesOfColor(int color) {
+        return PieceSpacesOfColor(color).GetActive();
+    }
+
     //methods to make moving and undoing faster 
     public void CreatePiece(int position, int piece)
     {
         piecePositionBoards[BitBoardIndex(piece)][position] = true;
+        
         fullSpaces[position] = true;
+        colorMask[position] = (piece >> 4) == 1;
     }
 
     public void MovePieceToEmptySpace(int start, int end, int piece)
     {
         piecePositionBoards[BitBoardIndex(piece)][start] = false;
-        fullSpaces[start] = false;
         piecePositionBoards[BitBoardIndex(piece)][end] = true;
+        
+        fullSpaces[start] = false;
+        colorMask[start] = false;
         fullSpaces[end] = true;
+        colorMask[end] = (piece >> 4) == 1;
     }
 
     public void MovePieceToFullSpace(int start, int end, int piece, int takenPiece)
     {
         piecePositionBoards[BitBoardIndex(takenPiece)][end] = false;
         piecePositionBoards[BitBoardIndex(piece)][start] = false;
-        fullSpaces[start] = false;
-        piecePositionBoards[BitBoardIndex(piece)][end] = true; // no need to update full spaces at end, there will still be a piece
+        piecePositionBoards[BitBoardIndex(piece)][end] = true; 
+        
+        fullSpaces[start] = false; // no need to update full spaces at end, there will still be a piece
+        colorMask[start] = false;
+        colorMask[end] = (piece >> 4) == 1;
     }
 
     public void TurnPawnToQueen(int pos, int color)
     {
         piecePositionBoards[queen - 1 + (6 * color)][pos] = true; //queen = true
         piecePositionBoards[6 * color][pos] = false; //pawn = false
-        //fullSpaces[pos] = true; 
     }
 
     public void TurnQueenToPawn(int pos, int color) //for undoing promotions
     {
         piecePositionBoards[queen - 1 + (6 * color)][pos] = false; 
         piecePositionBoards[6 * color][pos] = true; 
-        //fullSpaces[pos] = true; 
     }
 
     public int TakeEPPawn(int pos, int color)
     {
         piecePositionBoards[-6*(color-1)][(-8 + 16 * color) + pos] = false; // 6 for white (black pawn), 0 for black (white pawn) and -8 for white, 8 for black 
         fullSpaces[(-8 + 16 * color) + pos] = false;
+        colorMask[(-8 + 16 * color) + pos] = false;
         return (-8 + 16 * color) + pos;
     }
 }

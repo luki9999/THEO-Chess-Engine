@@ -76,6 +76,10 @@ public class ConsoleBehaviour : MonoBehaviour
 
     public void Print(string line)
     {
+        outputUI.text += "\n" + line + "\n";
+    }
+
+    public void Line(string line) {
         outputUI.text += "\n" + line;
     }
 
@@ -96,9 +100,8 @@ public class ConsoleBehaviour : MonoBehaviour
         foreach(ConsoleCommand command in consoleCommands)
         {
             if (command is HelpCommand) continue; //excludes the help command
-            Print(command.commandString);
+            Line(command.commandString);
             Print(command.helpString);
-            Print("");
         }
     }
 }

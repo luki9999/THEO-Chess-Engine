@@ -201,7 +201,7 @@ public class PieceHandler : MonoBehaviour
             if (!respectTurn || manager.playerOnTurn == ChessBoard.PieceColor(moveGenerator.board[startSpace])){
                 selectedPiece.GetComponent<SpriteRenderer>().color = Color.Lerp(Color.white, highlightColor, 0.5f); 
                 possibleMovesForClickedPiece = moveGenerator.GetLegalMovesForPiece(startSpace).GetActive();
-                spaceHandler.HighlightMoveList(possibleMovesForClickedPiece, Color.cyan, 0.5f);
+                spaceHandler.HighlightSpaceList(possibleMovesForClickedPiece, Color.cyan, 0.5f);
                 spaceHandler.HighlightSpace(startSpace, Color.green, 0.5f);
                 transformDelta = selectedPiece.transform.position - (Vector3) CursorPos();
                 selectedPiece.GetComponent<BoxCollider2D>().enabled = false;
@@ -237,7 +237,7 @@ public class PieceHandler : MonoBehaviour
 
             if (startSpace != endSpace)
             {
-                manager.MakeMoveNoGraphics(startSpace, endSpace);
+                manager.MakeMoveNoGraphics(startSpace, endSpace, false);
             }
 
             selectedPiece = null;

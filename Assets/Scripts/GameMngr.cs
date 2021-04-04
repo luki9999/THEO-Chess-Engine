@@ -57,7 +57,8 @@ public class GameMngr : MonoBehaviour
     [HideInInspector] public List<UndoMoveData> moveHistory;
     [SerializeField] public List<ulong> positionHistory;
 
-    //test positions
+    //testing and debug
+    public bool debugMode;
     public static readonly string startingPosString = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
     public static readonly string pawnTestPos = "8/8/6p1/7P/8/2p1p3/3P4/8 w - - 0 1";
     public static readonly string knightTestPos = "8/8/2p5/5p2/3N4/1P6/4P3/8 w - - 0 1";
@@ -108,6 +109,9 @@ public class GameMngr : MonoBehaviour
         playerOnTurn = moveGenerator.gameData.playerOnTurn;
         engineState = EngineState.Off;
         pieceHandler.LayOutPieces(moveGenerator.board);
+        if (debugMode) {
+            DebugOverlay();
+        }
     }
 
     public void StartChessGame()
@@ -116,12 +120,12 @@ public class GameMngr : MonoBehaviour
     }
 
     // move making (sync between board and graphics)
-    public void MakeMoveNoGraphics(int start, int end)
+    public void MakeMoveNoGraphics(int start, int end, bool engineMove)
     {
         if (gameOver) return;
-        if(engineState != EngineState.Both){        
-            if(playerOnTurn == white && !(engineState == EngineState.White)) console.Print("W: " + moveGenerator.MoveName(start, end));
-            if(playerOnTurn == black && !(engineState == EngineState.Black)) console.Print("B: " + moveGenerator.MoveName(start, end));
+        if(!engineMove){ //engine prints somewhere else        
+            if(playerOnTurn == white) console.Line("W: " + moveGenerator.MoveName(start, end));
+            if(playerOnTurn == black) console.Line("B: " + moveGenerator.MoveName(start, end));
         }
         lastMove = moveGenerator.MovePiece(start, end);
         if (lastMove.castlingIndex != -1) // Castling!
@@ -136,25 +140,25 @@ public class GameMngr : MonoBehaviour
         moveMade.Invoke();
     }
 
-    public void MakeMove(int start, int end)
+    public void MakeMove(int start, int end, bool engineMove)
     {
         if (gameOver) return;
         if (pieceHandler.GetPieceAtPos(end) != null)
         {
             pieceHandler.DisablePiece(end);
         }
-        MakeMoveNoGraphics(start, end);
+        MakeMoveNoGraphics(start, end, engineMove);
         pieceHandler.MovePieceSprite(start, end);
     }
 
-    public void MakeMoveAnimated(int start, int end)
+    public void MakeMoveAnimated(int start, int end, bool engineMove)
     {
         if (gameOver) return;
         if (pieceHandler.GetPieceAtPos(end) != null)
         {
             pieceHandler.DisablePiece(end);
         }
-        MakeMoveNoGraphics(start, end);
+        MakeMoveNoGraphics(start, end, engineMove);
         pieceHandler.MovePieceSpriteAnimated(start, end, moveAnimationTime);
     }
 
@@ -163,7 +167,7 @@ public class GameMngr : MonoBehaviour
         //TODO error handling
         string startString = moveString.Substring(0, 2);
         string endString = moveString.Substring(2, 2);
-        MakeMove(SpaceNumberFromString(startString), SpaceNumberFromString(endString));
+        MakeMove(SpaceNumberFromString(startString), SpaceNumberFromString(endString), false);
     }
 
     public void UndoLastMove()
@@ -173,6 +177,11 @@ public class GameMngr : MonoBehaviour
         moveHistory.RemoveAt(moveHistory.Count - 1);
         positionHistory.RemoveAt(positionHistory.Count - 1);
         pieceHandler.ReloadPieces();
+
+        if (debugMode) {
+            DebugOverlay();
+        }
+
         playerOnTurn = (playerOnTurn == white) ? black : white;
     }
 
@@ -208,6 +217,11 @@ public class GameMngr : MonoBehaviour
         moveHistory.Add(lastMove);
         spaceHandler.HighlightSpace(lastMove.start, Color.yellow, 0.7f);
         spaceHandler.HighlightSpace(lastMove.end, Color.yellow, 0.7f);
+
+        if (debugMode) {
+            DebugOverlay();
+        }
+        
         positionHistory.Add(moveGenerator.board.Hash());
         if (PieceType(lastMove.movedPiece) == pawn){
             movesWithoutPawn = 0;
@@ -231,7 +245,7 @@ public class GameMngr : MonoBehaviour
 
     void OnGameOver()
     {
-        console.Print("The game ended.");
+        console.Line("The game ended.");
         engineState = EngineState.Off;
         string playerStr = (playerOnTurn == white) ? "White" : "Black";
         if (moveGenerator.IsPlayerInCheck(playerOnTurn))
@@ -248,7 +262,7 @@ public class GameMngr : MonoBehaviour
     void Update()
     {
         if(engine.currentSearch.searchStarted){
-            console.Print(" ");
+            console.Line(" ");
             engine.currentSearch.searchStarted = false;
         }
         if (engine.currentSearch.valuesChanged)
@@ -274,13 +288,20 @@ public class GameMngr : MonoBehaviour
 
     void OnEngineMoveReady()
     {
-        MakeMoveAnimated(engine.nextFoundMove.Start, engine.nextFoundMove.End);
+        MakeMoveAnimated(engine.nextFoundMove.Start, engine.nextFoundMove.End, true);
         if(engineState == EngineState.Both){
             engine.ThreadedMove();
         }
     }
 
     //tests and stuff
+    public void DebugOverlay() {
+        spaceHandler.UnHighlightAll();
+        spaceHandler.HighlightSpaceList(moveGenerator.board.FindPiecesOfColor(white), Color.red, 0.8f);
+        spaceHandler.HighlightSpaceList(moveGenerator.board.FindPiecesOfColor(black), Color.green, 0.8f); 
+        spaceHandler.HighlightSpaceList((~moveGenerator.board.fullSpaces).GetActive(), Color.gray, 0.8f);
+    }
+
     public void MoveGenerationTest(int piece)
     {
         switch (piece)
@@ -308,7 +329,7 @@ public class GameMngr : MonoBehaviour
         {
             spaceHandler.UnHighlightAll();
             List<int> possibleMoves = moveGenerator.GetPossibleSpacesForPiece(3+ 3*8).GetActive();
-            spaceHandler.HighlightMoveList(possibleMoves, Color.cyan, 0.5f);
+            spaceHandler.HighlightSpaceList(possibleMoves, Color.cyan, 0.5f);
             spaceHandler.HighlightSpace(27, Color.green, 0.5f);
         }
         else
@@ -316,8 +337,8 @@ public class GameMngr : MonoBehaviour
             spaceHandler.UnHighlightAll();
             List<int> possibleMoves1 = moveGenerator.GetPossibleSpacesForPiece(3+ 1*8).GetActive();
             List<int> possibleMoves2 = moveGenerator.GetPossibleSpacesForPiece(6+ 5*8).GetActive();
-            spaceHandler.HighlightMoveList(possibleMoves1, Color.cyan, 0.5f);
-            spaceHandler.HighlightMoveList(possibleMoves2, Color.magenta, 0.5f);
+            spaceHandler.HighlightSpaceList(possibleMoves1, Color.cyan, 0.5f);
+            spaceHandler.HighlightSpaceList(possibleMoves2, Color.magenta, 0.5f);
             spaceHandler.HighlightSpace(11, Color.green, 0.5f);
             spaceHandler.HighlightSpace(46, Color.red, 0.5f);
         }
@@ -327,9 +348,9 @@ public class GameMngr : MonoBehaviour
     {
         spaceHandler.UnHighlightAll();
         var attackedSpacesBlack = moveGenerator.GenerateAttackedSpaceBitboard(black).GetActive();
-        spaceHandler.HighlightMoveList(attackedSpacesBlack, Color.red, 0.25f);
+        spaceHandler.HighlightSpaceList(attackedSpacesBlack, Color.red, 0.25f);
         var attackedSpacesWhite = moveGenerator.GenerateAttackedSpaceBitboard(white).GetActive();
-        spaceHandler.HighlightMoveList(attackedSpacesWhite, Color.green, 0.25f);
+        spaceHandler.HighlightSpaceList(attackedSpacesWhite, Color.green, 0.25f);
     }
 
     public void AttackedSpaceGenerationTest()

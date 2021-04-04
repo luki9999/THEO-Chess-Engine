@@ -2,8 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "New Eval Command", menuName = "Commands/Evaluate")]
-public class EvalCommand : ConsoleCommand
+[CreateAssetMenu(fileName = "New Debug Command", menuName = "Commands/Debug Command")]
+public class DebugCommand : ConsoleCommand
 {
     GameMngr manager;
     ConsoleBehaviour console;
@@ -16,16 +16,10 @@ public class EvalCommand : ConsoleCommand
     //runs on command execution
     public override bool Action(string[] args)
     {
-        if (args.Length != 0 && args[0] == "search")
-        {
-            console.Line(" ");
-            manager.engine.ThreadedSearch();
-        }
-        else
-        {
-            int evalValue = manager.engine.Evaluation.EvaluatePosition(manager.playerOnTurn);
-            console.Print("Current static evaluation: " + evalValue.ToString());
-        }
+        manager.debugMode = !manager.debugMode;
+        manager.spaceHandler.UnHighlightAll();
+        if (manager.debugMode) manager.DebugOverlay();
+        console.Print("Toggled debug overlay.");
         return true;
     }
 }

@@ -39,7 +39,7 @@ public class EngineCommand : ConsoleCommand
             console.Print("Invalid input, use white, black, both or stop.");
             return false; 
         }
-        console.Print("The engine plays " + playerText + " now. Use go to force it to move first.\n");
+        console.Print("The engine plays " + playerText + " now. Use go to force it to move first.");
         return true;
     }
 }
