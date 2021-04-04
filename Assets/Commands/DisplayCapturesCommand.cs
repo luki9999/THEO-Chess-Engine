@@ -21,7 +21,7 @@ public class DisplayCapturesCommand : ConsoleCommand
         }
         manager.spaceHandler.UnHighlightAll();
         int player = (args[0] == "white") ? ChessBoard.white : ChessBoard.black;
-        List<EngineMove> possibleMoves = manager.engine.GetCaptures(player);
+        List<EngineMove> possibleMoves = manager.engine.GetOrderedCaptures(player);
         List<int> alreadyHighlightedSpaces = new List<int>();
         List<int> alreadyHighlightedPieces = new List<int>();
         foreach (EngineMove move in possibleMoves)

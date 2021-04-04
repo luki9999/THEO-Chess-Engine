@@ -116,7 +116,6 @@ public class GameMngr : MonoBehaviour
     }
 
     // move making (sync between board and graphics)
-
     public void MakeMoveNoGraphics(int start, int end)
     {
         if (gameOver) return;

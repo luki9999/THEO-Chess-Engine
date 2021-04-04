@@ -483,6 +483,7 @@ public class MoveGenerator
         if ((SpaceY(end) == 7 || SpaceY(end) == 0) && type == pawn) // pawn of own color never will go backwards
         {
             board.TurnPawnToQueen(end, color);
+            undoData.wasPromotion = true;
         }
 
         SetAttackedSpaceData();
