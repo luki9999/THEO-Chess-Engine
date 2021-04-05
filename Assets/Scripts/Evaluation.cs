@@ -8,9 +8,13 @@ public class Evaluation
 {
     MoveGenerator moveGenerator;
 
-    readonly int[] pieceValues = new int[] {0, 100, 300, 300, 500, 900, 0};
-    const int checkBonus = 30;
-    const int endgamePieceDistanceBonusMultiplier = 5;
+
+    static readonly int[] corners = new int[] {0, 7, 56, 63};
+    static readonly int[] pieceValues = new int[] {0, 100, 300, 320, 500, 900, 0};
+    const int checkBonus = 40;
+    const int endgameKingDistanceBonusMultiplier = 3;
+    const int endgameKingCornerBonusMultiplier = 15; // cornering the king in endgames is very important
+    const int controlBonusMultiplier = 3;
     const int endgameThreshold = 2 * 500 + 2 * 300 + 2 * 100; //two rooks, two pieces, two pawns or similar
 
     public Evaluation(MoveGenerator movegen){
@@ -63,38 +67,40 @@ public class Evaluation
         return output;
     }
 
-    int EndgameKingDistanceBonus()
-    {
-        int whiteBonus = 0, blackBonus = 0;
-        foreach (int piece in ChessBoard.possiblePieces)
-        {
-            if (ChessBoard.PieceType(piece) == ChessBoard.pawn || ChessBoard.PieceType(piece) == ChessBoard.king) continue; //ignore pawns and kings
-            foreach (int space in moveGenerator.board.FindPieces(piece))
-            {
-                if (ChessBoard.PieceColor(piece) == ChessBoard.white)
-                {
-                    whiteBonus += 7 - ChessBoard.Distance(piece, moveGenerator.blackKingPosition);
-                } 
-                else if(ChessBoard.PieceColor(piece) == ChessBoard.black)
-                {
-                    blackBonus += 7 - ChessBoard.Distance(piece, moveGenerator.whiteKingPosition);
-                }
-            }
+    int EndgameKingCornerBonus(int player) {
+        int smallestCornerDistance = 32;
+        int otherKingPos = (player == white) ? moveGenerator.blackKingPosition : moveGenerator.whiteKingPosition;
+        foreach(int corner in corners) {
+            int distance = Distance(otherKingPos, corner);
+            if (distance < smallestCornerDistance) smallestCornerDistance = distance;
         }
-        whiteBonus = (whiteBonus * endgamePieceDistanceBonusMultiplier) / moveGenerator.board.WhitePieceCount();
-        blackBonus = (blackBonus * endgamePieceDistanceBonusMultiplier) / moveGenerator.board.BlackPieceCount();
-        int bonusForDistanceBetweenKings = (7 - ChessBoard.Distance(moveGenerator.blackKingPosition, moveGenerator.whiteKingPosition)) * endgamePieceDistanceBonusMultiplier;
-        return ((whiteBonus - blackBonus)) + bonusForDistanceBetweenKings;
+        return ((8 - smallestCornerDistance)  +  (8 - ChessBoard.Distance(moveGenerator.blackKingPosition, moveGenerator.whiteKingPosition))) * endgameKingCornerBonusMultiplier; 
+    }
+
+    int BoardControlBonus() {
+        BitBoard whiteSpaces = moveGenerator.isSpaceAttackedByWhite;
+        BitBoard blackSpaces = moveGenerator.isSpaceAttackedByBlack;
+        return (whiteSpaces.CountActive() - blackSpaces.CountActive()) * controlBonusMultiplier;
     }
 
     public int EvaluatePosition(int player) //static eval of given position from the players perspective
     {
         int eval = MaterialValue();
         bool endgame = IsEndgame();
+        if (endgame && System.Math.Abs(eval) >= 300) {
+            if(System.Math.Sign(eval) == 1) {
+                eval += EndgameKingCornerBonus(white);
+                //Debug.Log(player.ToString() + " is ahead and gets " + EndgameKingCornerBonus(player).ToString());
+            } 
+            else if (System.Math.Sign(eval) == -1) {
+                eval -= EndgameKingCornerBonus(black);
+            } 
+        }
         if (moveGenerator.IsPlayerInCheck(player)) eval -= checkBonus;
         if (moveGenerator.IsPlayerInCheck(player ^ 1)) eval += checkBonus; //SLOW: maybe test if this is worth it
         eval += BonusValue();
-        if (endgame) eval += EndgameKingDistanceBonus();
+        eval += BoardControlBonus();
+        //if (endgame) eval += EndgameKingDistanceBonus();
         return (player == ChessBoard.white) ? eval : -eval;
     }
 

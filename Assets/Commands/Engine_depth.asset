@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: Engine_depth
   m_EditorClassIdentifier: 
   commandString: depth
-  helpString: 'Sets or displays engine depth. '
+  helpString: 'Sets or displays engine depth limit. '

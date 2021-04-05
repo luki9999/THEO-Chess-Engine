@@ -22,10 +22,11 @@ public struct ChessGameData
 
 public class MoveGenerator
 {
+    //core
     public ChessBoard board;
 
+    //constants
     public const int shortCastlingWhite = 0, longCastlingWhite = 1, shortCastlingBlack = 2, longCastlingBlack = 3;
-
     static readonly int[] slideDirections = new int[] { 8, -8, 1, -1, 9, 7, -7, -9 };
     //up, down, right, left, ur, ul, dr, dl
     static readonly int[][] pawnDirs = new int[][] { new int[] { 8, 9, 7 }, new int[] { -8, -7, -9} };
@@ -33,17 +34,20 @@ public class MoveGenerator
     //up, down, right, left
     static int[][] SpacesToEdge;
 
+    //variables
     public ChessGameData gameData;
-
     public BitBoard isSpaceAttackedByWhite, isSpaceAttackedByBlack;
-
     public int whiteKingPosition;
     public int blackKingPosition;
+
+     //hashing
+    ZobristHashing hashing;
 
     public MoveGenerator()
     {
         board = new ChessBoard();
         gameData = new ChessGameData(white, 0, new bool[] { true, true, true, true });
+        hashing = new ZobristHashing((ulong)whiteSpaces);
         GenerateSpacesToEdgeData();
     }
 
@@ -487,6 +491,9 @@ public class MoveGenerator
         }
 
         SetAttackedSpaceData();
+
+        gameData.playerOnTurn ^= 1;
+
         return undoData;
     }
 
@@ -511,5 +518,12 @@ public class MoveGenerator
             board.MovePieceToEmptySpace(rooksAfter[undoData.castlingIndex], rooksBefore[undoData.castlingIndex], rook | rookColor);
         }
         SetKingPositions();
+        gameData.playerOnTurn ^= 1;
+
+    }
+
+    //Hashing for TranspoTable
+    public ulong ZobristHash() {
+        return hashing.Hash(board, gameData.playerOnTurn, gameData.castling, gameData.epSpace);
     }
 }

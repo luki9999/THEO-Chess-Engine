@@ -51,7 +51,11 @@ public class GameMngr : MonoBehaviour
     public int engineDepth;
     public int captureDepth;
     public int perftTestDepth;
-
+    public float currentTime;
+    public float lastSearchStartTime;
+    public float deltaTime;
+    public float timeLimit;
+    public bool searching;
     
     //history
     [HideInInspector] public List<UndoMoveData> moveHistory;
@@ -105,9 +109,10 @@ public class GameMngr : MonoBehaviour
         moveGenerator.LoadFEN(fen);
         gameOver = false;
         moveHistory = new List<UndoMoveData>();
-        positionHistory = new List<ulong>() { moveGenerator.board.Hash() };
+        positionHistory = new List<ulong>() { moveGenerator.ZobristHash() };
         playerOnTurn = moveGenerator.gameData.playerOnTurn;
         engineState = EngineState.Off;
+        movesWithoutPawn = 0;
         pieceHandler.LayOutPieces(moveGenerator.board);
         if (debugMode) {
             DebugOverlay();
@@ -123,6 +128,7 @@ public class GameMngr : MonoBehaviour
     public void MakeMoveNoGraphics(int start, int end, bool engineMove)
     {
         if (gameOver) return;
+        engine.transpositionTable.Clear();
         if(!engineMove){ //engine prints somewhere else        
             if(playerOnTurn == white) console.Line("W: " + moveGenerator.MoveName(start, end));
             if(playerOnTurn == black) console.Line("B: " + moveGenerator.MoveName(start, end));
@@ -195,7 +201,7 @@ public class GameMngr : MonoBehaviour
     //event handling (what happens after moves)
     public GameState CurrentState()
     {
-        if(positionHistory.Count(x => x == moveGenerator.board.Hash()) == 3) return GameState.Draw; //draw after 3 fold repetion
+        if(positionHistory.Count(x => x == moveGenerator.ZobristHash()) == 3) return GameState.Draw; //draw after 3 fold repetion
         if(movesWithoutPawn == 50) return GameState.Draw; //draw after 50 moves without pawn move
         List<EngineMove> moveset = engine.GetMoveset(playerOnTurn);
         if(moveset.Count == 0)
@@ -222,7 +228,7 @@ public class GameMngr : MonoBehaviour
             DebugOverlay();
         }
         
-        positionHistory.Add(moveGenerator.board.Hash());
+        positionHistory.Add(moveGenerator.ZobristHash());
         if (PieceType(lastMove.movedPiece) == pawn){
             movesWithoutPawn = 0;
         } else{
@@ -261,16 +267,29 @@ public class GameMngr : MonoBehaviour
     //data sharing with engine and making engine moves
     void Update()
     {
+        currentTime = Time.realtimeSinceStartup;
+        deltaTime = currentTime - lastSearchStartTime;
+        
         if(engine.currentSearch.searchStarted){
             console.Line(" ");
+            lastSearchStartTime = currentTime;
+            deltaTime = 0;
             engine.currentSearch.searchStarted = false;
+
+            searching = true;
         }
+
+        if (deltaTime > timeLimit & searching){
+            engine.abortSearch = true;
+            searching = false;
+        }
+
         if (engine.currentSearch.valuesChanged)
         {
             string playerStr = (playerOnTurn == white) ? "W: " : "B: ";
             console.ReplaceLast(playerStr + engine.currentSearch.currentBestMoveName.PadRight(6)
                 + " | Static: " + engine.currentSearch.currentBestEval.ToString("N0").PadLeft(7) 
-                + " | Delta: " + engine.currentSearch.currentMoveScore.ToString("N0").PadLeft(7)
+                + " | Depth: " + engine.currentSearch.currentDepth.ToString("N0").PadLeft(3)
                 + " | Count: " + engine.currentSearch.currentSearchCount.ToString("N0").PadLeft(12));
             engine.currentSearch.valuesChanged = false;
         }
@@ -278,11 +297,13 @@ public class GameMngr : MonoBehaviour
         {
             OnEngineMoveReady();
             engine.moveReady = false;
+            searching = false;
         }
         if (engine.evalReady)
         {
             console.Print("Searched Eval: " + engine.currentSearch.currentBestEval.ToString());
             engine.evalReady = false;
+            searching = false;
         }
     }
 

@@ -31,15 +31,18 @@ public struct SearchData
     public int currentBestEval;
     public int currentMoveScore;
     public string currentBestMoveName;
+
+    public int currentDepth;
     public bool valuesChanged;
     public bool searchStarted;
 
-    public SearchData(int currentSearchCount, int currentBestEval, string currentBestMove, int currentMoveScore)
+    public SearchData(int currentSearchCount, int currentBestEval, string currentBestMove, int currentMoveScore, int currentDepth)
     {
         this.currentSearchCount = currentSearchCount;
         this.currentBestEval = currentBestEval;
         this.currentBestMoveName = currentBestMove;
         this.currentMoveScore = currentMoveScore;
+        this.currentDepth = currentDepth;
         valuesChanged = false;
         searchStarted = false;
     }
@@ -50,6 +53,7 @@ public class Engine
     //consts
     const int positiveInfinity = 9999999;
     const int negativeInfinity = -positiveInfinity;
+    const int mateScore = 100000;
 
     //linking
     GameMngr manager;
@@ -63,6 +67,7 @@ public class Engine
     public int originalDepth;
     public int searchCount;
     EngineMove currentBestMove;
+    public bool abortSearch;
     
     //output data
     public bool moveReady = false;
@@ -70,14 +75,18 @@ public class Engine
     public EngineMove nextFoundMove;
     public SearchData currentSearch;
 
+    //transpotable
+    public TranspositionTable transpositionTable;
+
     //init
     public Engine(MoveGenerator moveGenToUse)
     {
         moveGenerator = moveGenToUse;
         manager = GameObject.FindGameObjectWithTag("Manager").GetComponent<GameMngr>();
         console = manager.console;
-        currentSearch = new SearchData(0, 0, "", 0);
+        currentSearch = new SearchData(0, 0, "", 0, 0);
         evaluator = new Evaluation(moveGenerator);
+        transpositionTable = new TranspositionTable(64000, moveGenerator);
     }     
 
     //moveset generation
@@ -145,30 +154,55 @@ public class Engine
     //move searching
     public int Search(int player, int depth, int alpha, int beta, int captureDepth = -1)
     {
+        if (abortSearch) return 0;
         bool newBestMove = false;
         searchCount++;
+        int plyFromRoot = originalDepth - depth;
+
+        if(plyFromRoot > 1) {
+            alpha = System.Math.Max (alpha, -mateScore + plyFromRoot); //stop if we have got a mate
+			beta = System.Math.Min (beta, mateScore - plyFromRoot);
+			if (alpha >= beta) {
+				return alpha;
+			}
+        }
+
         if (depth == 0) return CaptureSearch(player, captureDepth, alpha, beta);
+
+        int storedEval = transpositionTable.LookupEval(depth, alpha, beta);
+
+        if (storedEval != TranspositionTable.lookupFailed && depth != originalDepth) {
+            return storedEval;
+        } 
+
         List<EngineMove> moves = GetOrderedMoveset(player);
         if (moves.Count == 0) 
         {
-            if(moveGenerator.IsPlayerInCheck(player)) return -10000 + depth; //Checkmate in depth ply, favors earlier checkmate 
+            if(moveGenerator.IsPlayerInCheck(player)) return -mateScore + plyFromRoot; //Checkmate in (originalDepth - depth) ply, favors earlier checkmate 
             return 0; // draw
         }
+
+        int evalType = TranspositionTable.upperBound;
+        EngineMove bestMoveInThisPos = new EngineMove(0,0,0);
+
         foreach (EngineMove move in moves)
         {
             UndoMoveData madeMove = moveGenerator.MovePiece(move.Start, move.End);
             int eval = -Search(player ^ 1, depth - 1, -beta, -alpha, captureDepth);
-            if(manager.positionHistory.Count(x => x == moveGenerator.board.Hash()) == 2) eval = 0; //draw after 3 fold repetion
+            if(manager.positionHistory.Count(x => x == moveGenerator.ZobristHash()) == 2) eval = 0; //draw after 3 fold repetion
             moveGenerator.UndoMovePiece(madeMove);
             
             if (eval >= beta)//prune the branch if move would be too good
             {
+                transpositionTable.StoreEval (depth, beta, TranspositionTable.lowerBound, move);
                 return eval;
             }
 
             if (eval > alpha)
             { //found new best move
                alpha = eval;
+               evalType = TranspositionTable.exact;
+               bestMoveInThisPos = move;
                newBestMove = true;
                //Debug.Log("neues alpha: " + maxValue.ToString());
             }
@@ -180,11 +214,14 @@ public class Engine
                 currentSearch.currentBestMoveName = moveGenerator.MoveName(move.Start, move.End); // SLOW: i'm literally building a string in the most performance critical place... usable for displaying in console
                 currentSearch.currentSearchCount = searchCount;
                 currentSearch.currentBestEval = alpha;
-                currentSearch.currentMoveScore = evaluator.EvaluateMove(currentBestMove);
+                currentSearch.currentDepth = originalDepth;
                 currentSearch.valuesChanged = true;
             }
 
             newBestMove = false;
+        }
+        if ( IsMate(alpha)) { //excludes mate sequences from transpo table
+        transpositionTable.StoreEval(depth, alpha, evalType, bestMoveInThisPos); 
         }
         return alpha;
     }
@@ -223,116 +260,72 @@ public class Engine
         return alpha;
     }
 
-    //better algo, should be faster than normal search
-    public int NegaScoutSearch(int player, int depth, int alpha, int beta, int captureDepth = -1){
-        int eval; bool newBestMove = false;
-        searchCount++;
-
-        if (depth == 0) return NegaScoutCaptureSearch(player, captureDepth, alpha, beta);
-        List<EngineMove> moveset = GetOrderedMoveset(player);
-        int windowBeta = beta;
-
-        if (moveset.Count == 0) 
-        {
-            if(moveGenerator.IsPlayerInCheck(player)) return -10000 + depth; //Checkmate in depth ply, favors earlier checkmate 
-            return 0; // draw
-        }
-
-        for(int i = 0; i < moveset.Count; i++){
-            UndoMoveData move = moveGenerator.MovePiece(moveset[i].Start, moveset[i].End);
-            eval = -NegaScoutSearch(player ^ 1, depth - 1, -windowBeta, -alpha, captureDepth);
-            if ((eval > alpha) &&  (eval < beta) && (i > 1)) { // score fits into window between alpha and beta, we need to re-search, always applies during last two plies
-                eval = -NegaScoutSearch(player ^ 1, depth - 1, -beta, -alpha, captureDepth);
-            }
-            moveGenerator.UndoMovePiece(move);
-            if (eval >= beta){ //prune the branch
-                return beta;
-            }
-            //windowAlpha = System.Math.Max(windowAlpha, eval); if clause below shold do the same
-            if(eval > alpha) { //found new best move
-                alpha = eval;
-                newBestMove = true;
-            }
-            // update output data
-            if (depth == originalDepth && newBestMove) {
-                currentBestMove = moveset[i];
-
-                currentSearch.currentBestMoveName = moveGenerator.MoveName(currentBestMove.Start, currentBestMove.End); // SLOW: i'm literally building a string in the most performance critical place... usable for displaying in console
-                currentSearch.currentSearchCount = searchCount;
-                currentSearch.currentBestEval = alpha;
-                currentSearch.currentMoveScore = evaluator.EvaluateMove(currentBestMove);
-                currentSearch.valuesChanged = true;
-            }
-            newBestMove = false;
-            windowBeta = alpha + 1; //new null window, accumulates over time and makes eval slightly wrong, but not that bad
-        }
-        return alpha;
+    bool IsMate(int eval){
+        return (System.Math.Abs(eval) > (mateScore - 100));
     }
 
-    public int NegaScoutCaptureSearch(int player, int captureDepth, int alpha, int beta)
-    {
-        searchCount++;
-        int eval = evaluator.EvaluatePosition(player);
-        if (captureDepth == 0) return eval; //when captureDepth is negative this never happens
-        if (eval >= beta) { // nice early pruning
-            return beta;
-        }
-        if (eval > alpha) { // in case the pos is good but all captures are bad
-            alpha = eval;
-        }
-        List<EngineMove> moveset = GetOrderedCaptures(player);
-
-        int windowBeta = beta;
-
-        for (int i = 0; i < moveset.Count; i++)
-        {
-            UndoMoveData move = moveGenerator.MovePiece(moveset[i].Start, moveset[i].End);
-            eval = -NegaScoutCaptureSearch(player ^ 1, captureDepth - 1, -windowBeta, -alpha);
-            if ((eval > alpha) &&  (eval < beta) && (i > 1)) { // score fits into window between alpha and beta, we need to re-search, always applies during last two plies
-                eval = -NegaScoutCaptureSearch(player ^ 1, captureDepth - 1, -beta, -alpha);
-            }
-            moveGenerator.UndoMovePiece(move);
-            if (alpha >= beta) { //prune the branch, move too good
-                return beta;
-            }
-            if (eval > alpha) { //found new best move
-                alpha = eval;
-            }
-            
-            windowBeta = alpha + 1;
-        }
-        return alpha;
-    }
-
+// I cant get negascout to not blunder tons of pieces, so it has to go... RIP nice effient algorithm
 
     //search wrappers
     public EngineMove ChooseMove(int player, int depth, int captureDepth = -1)
     {
         originalDepth = depth; //important
         searchCount = 0;
-        NegaScoutSearch(player, depth, negativeInfinity, positiveInfinity, captureDepth);
+        Search(player, depth, negativeInfinity, positiveInfinity, captureDepth);
         currentSearch.currentSearchCount = searchCount;
         currentSearch.valuesChanged = true;
         return currentBestMove;
     }
 
-    public int NegaScoutEval(int player, int depth, int captureDepth = -1)
+    public EngineMove IterDepthChooseMove(int player, int maxDepth, bool depthLimit, bool timeLimit = false, float maxTime = 100) {
+        int lastEval = 0, lastDepth = 0;
+        manager.searching = true;
+        abortSearch = false;
+        if (!depthLimit) maxDepth = 100;
+        EngineMove bestMoveThisIter = new EngineMove(0,0,0);
+        searchCount = 0;
+        for (int searchDepth = 1; searchDepth <= maxDepth; searchDepth++) {
+            //deltaTime = manager.currentTime - startTime;
+            //if (deltaTime > maxTime) abortSearch = true;
+            originalDepth = searchDepth;
+
+            int currentEval = Search(player, searchDepth, negativeInfinity, positiveInfinity, 2 + 4 * (searchDepth-1));
+
+            if (abortSearch){
+                currentSearch.currentBestMoveName = moveGenerator.MoveName(bestMoveThisIter.Start, bestMoveThisIter.End);
+                currentSearch.currentSearchCount = searchCount;
+                currentSearch.currentBestEval = lastEval;
+                currentSearch.currentDepth = lastDepth;
+                currentSearch.valuesChanged = true;
+                return bestMoveThisIter;
+            }
+            lastEval = currentEval; // we didnt abort so values are fine
+            lastDepth = searchDepth;
+            bestMoveThisIter = currentBestMove;
+            if (IsMate(lastEval)) {
+                break;
+            }
+        }
+        return bestMoveThisIter;
+    }
+
+    public int SearchEval(int player, int depth, int captureDepth = -1)
     {
         originalDepth = depth; //important
         searchCount = 0;
-        int eval = NegaScoutSearch(player, depth, negativeInfinity, positiveInfinity, captureDepth);
+        int eval = Search(player, depth, negativeInfinity, positiveInfinity, captureDepth);
         return eval;
     }
 
     public void ChooseMove()
     {
-        nextFoundMove = ChooseMove(manager.playerOnTurn, manager.engineDepth, manager.captureDepth);
+        nextFoundMove = IterDepthChooseMove(manager.playerOnTurn, manager.engineDepth, true, true);
         moveReady = true;
     }
 
     public void SearchEval()
     {
-        currentSearch.currentBestEval = NegaScoutEval(manager.playerOnTurn, manager.engineDepth, manager.captureDepth);
+        currentSearch.currentBestEval = SearchEval(manager.playerOnTurn, 3, -1); //hardcoded for now since engine depth can get very high now
         evalReady = true;
     }
 

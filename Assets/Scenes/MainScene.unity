@@ -329,9 +329,14 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   engineState: 0
-  engineDepth: 4
-  captureDepth: 6
+  engineDepth: 32
+  captureDepth: -1
   perftTestDepth: 4
+  currentTime: 0
+  lastSearchStartTime: 0
+  deltaTime: 0
+  timeLimit: 5
+  searching: 0
   positionHistory: 
   debugMode: 0
 --- !u!4 &239532363
@@ -2971,6 +2976,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: f030d4bdcfd6415419ed6d8737833493, type: 2}
   - {fileID: 11400000, guid: fd529bc68f3f3ae438777b6a55128b3e, type: 2}
   - {fileID: 11400000, guid: 4bb6846803cbf424c896740adebde9a7, type: 2}
+  - {fileID: 11400000, guid: b711e84a7672fe0469f3eadbd28b06c8, type: 2}
+  - {fileID: 11400000, guid: 56b60e3ca6776c04396a562b9c7d7fb0, type: 2}
   inputUI: {fileID: 420004694}
   outputUI: {fileID: 845803998}
 --- !u!1 &1476746548

@@ -114,6 +114,50 @@ public class BitBoard
     }
 }
 
+class ZobristHashing {
+    ulong[] keys = new ulong[781];
+
+    public ulong[] Keys {get => keys;}
+
+    public ZobristHashing(ulong randomSeed) {
+        XORShiftRandom rng = new XORShiftRandom(randomSeed);
+        for (int i = 0; i < keys.Length; i++) {
+            keys[i] = rng.Next();
+        }
+    }
+
+    ulong LookUpPiece(int space, int piece) { 
+        int index = (((piece & 0b111) - 1) + (6 * (piece >> 4))) * space; //piece type and piece color create an index from 0 to 11, which is then multiplied with space
+        return keys[index];
+    }
+ 
+    ulong LookUpColor(int color) {
+        return keys[768] * (ulong)color;
+    }
+
+    ulong LookUpCastling(int castlingIndex) {
+        return keys[769 + castlingIndex];
+    }
+
+    ulong LookUpEP(int epSpace) {
+        if (epSpace == 0) return 0;
+        return keys[773 + ChessBoard.SpaceY(epSpace)];
+    }
+
+    public ulong Hash(ChessBoard input, int player, bool[] castling, int epSpace) {
+        ulong result = 0;
+        foreach (int space in input.fullSpaces.GetActive()) {
+            result ^= LookUpPiece(space, input[space]);
+        } 
+        result ^= LookUpColor(player);
+        for (int castlingIndex = 0; castlingIndex < 4; castlingIndex++) {
+            if (castling[castlingIndex]) result ^= LookUpCastling(castlingIndex);
+        }
+        result ^= LookUpEP(epSpace);
+        return result;
+    }
+}
+
 [Serializable]
 public class ChessBoard
 {
@@ -130,7 +174,7 @@ public class ChessBoard
     public static readonly char[] fileLetters = new char[] { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h' };
     public static readonly char[] rankNumbers = new char[] { '1', '2', '3', '4', '5', '6', '7', '8' };
 
-    static readonly BitBoard whiteSpaces = (BitBoard)0b10101010_01010101_10101010_01010101_10101010_01010101_10101010_01010101;
+    public static readonly BitBoard whiteSpaces = (BitBoard)0b10101010_01010101_10101010_01010101_10101010_01010101_10101010_01010101;
 
     //core
     public BitBoard[] piecePositionBoards; //white pawns, white knights, white bishops, white rooks, white queens, white kings, after that same for black
@@ -144,6 +188,8 @@ public class ChessBoard
     public static readonly int[] rooksAfter = new int[] {5, 3, 61, 59};
     public static readonly int[] kingsAfter = new int[] {6, 2, 62, 58};
 
+
+
     //init
     public ChessBoard()
     {
@@ -154,7 +200,6 @@ public class ChessBoard
         {
             piecePositionBoards[i] = new BitBoard();
         }
-
     }
 
     //operators and nice stuff
@@ -207,7 +252,7 @@ public class ChessBoard
     }
 
     //hashing, used for position history
-    public ulong Hash()
+    public ulong QuickHash()
     {
         ulong cutoffSum = 0, bitboardSum = 0;
         for (int i = 0; i < 12; i++)

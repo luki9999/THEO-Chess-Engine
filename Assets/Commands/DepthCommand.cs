@@ -27,9 +27,9 @@ public class DepthCommand : ConsoleCommand
             console.Print("Invalid arugment for depth command. Use an integer.");
             return false;
         }
-        else if (depthValue < 1 || depthValue > 8) //TODO make this not hardcoded, you donut
+        else if (depthValue < 1 || depthValue > 100) //TODO make this not hardcoded, you donut
         {
-            console.Print("Engine depth has to be between 1 and 8.\nChoose a different value.");
+            console.Print("Engine depth limit has to be between 1 and 100.\nChoose a different value.");
             return false;
         }
         manager.engineDepth = depthValue;
