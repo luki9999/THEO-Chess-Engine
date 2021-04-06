@@ -38,6 +38,7 @@ public class TestPosCommand : ConsoleCommand
 
     public override bool Action(string[] args)
     {
+        if (mngr.searching) return false;
         if (args[0].Equals("help", System.StringComparison.OrdinalIgnoreCase))
         {
             console.Print("Possible positions to load:\n" + validPosNames);

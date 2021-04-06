@@ -16,6 +16,7 @@ public class DebugCommand : ConsoleCommand
     //runs on command execution
     public override bool Action(string[] args)
     {
+        if (manager.searching) return false;
         manager.debugMode = !manager.debugMode;
         manager.spaceHandler.UnHighlightAll();
         if (manager.debugMode) manager.DebugOverlay();

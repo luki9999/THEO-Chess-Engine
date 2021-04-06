@@ -16,6 +16,7 @@ public class ReloadCommand : ConsoleCommand
     //runs on command execution
     public override bool Action(string[] args)
     {
+        if (manager.searching) return false;
         manager.pieceHandler.ReloadPieces();
         console.Print("Reloading piece positions.");
         return true;

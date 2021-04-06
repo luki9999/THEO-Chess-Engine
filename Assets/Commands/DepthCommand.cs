@@ -16,6 +16,7 @@ public class DepthCommand : ConsoleCommand
     //runs on command execution
     public override bool Action(string[] args)
     {
+        if (manager.searching) return false;
         int depthValue;
         if (args.Length == 0)
         {

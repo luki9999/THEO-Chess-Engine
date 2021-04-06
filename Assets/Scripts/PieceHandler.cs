@@ -247,7 +247,7 @@ public class PieceHandler : MonoBehaviour
 
     void Update()
     {
-        if (pieceUnderCursor != null && ChessBoard.PieceColor(manager.moveGenerator.board[CursorSpace()]) == manager.playerOnTurn && !inDrag) { //ouch
+        if (pieceUnderCursor != null && !inDrag) { //ouch
             pieceUnderCursor.GetComponent<SpriteRenderer>().color = Color.Lerp(Color.white, highlightColor, 0.5f);
         }
         if ((GetPieceAtCursor() != pieceUnderCursor || inDrag) && pieceUnderCursor != null) { //piece just got unhighlighted

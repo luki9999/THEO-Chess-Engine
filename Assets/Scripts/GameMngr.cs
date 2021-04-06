@@ -27,6 +27,7 @@ public class GameMngr : MonoBehaviour
     public SpaceHandler spaceHandler;
     public BoardCreation boardCreation;
     public ConsoleBehaviour console;
+    public UIHelper ui;
 
     //graphics + init
     public bool boardExists = false;
@@ -194,6 +195,7 @@ public class GameMngr : MonoBehaviour
     public void FlipBoard()
     {
         pieceHandler.ClearBoard();
+        spaceHandler.UnHighlightAll();
         boardFlipped = !boardFlipped;
         pieceHandler.LayOutPieces(moveGenerator.board);
     }
@@ -310,6 +312,7 @@ public class GameMngr : MonoBehaviour
     void OnEngineMoveReady()
     {
         MakeMoveAnimated(engine.nextFoundMove.Start, engine.nextFoundMove.End, true);
+        ui.FlipPlayButton();
         if(engineState == EngineState.Both){
             engine.ThreadedMove();
         }

@@ -56,7 +56,7 @@ public class ConsoleBehaviour : MonoBehaviour
         }
     }
 
-    void RunCommand(string input)
+    public void RunCommand(string input)
     {
         if (input == "#") //character to pull down last line
         {

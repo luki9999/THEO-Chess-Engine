@@ -16,6 +16,7 @@ public class RestartCommand : ConsoleCommand
     //runs on command execution
     public override bool Action(string[] args)
     {
+        if (manager.searching) return false;
         manager.StartChessGame();
         console.Print("Restarting game.");
         return true;

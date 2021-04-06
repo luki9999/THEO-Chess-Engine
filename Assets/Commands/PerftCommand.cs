@@ -14,6 +14,7 @@ public class PerftCommand : ConsoleCommand
     }
     public override bool Action(string[] args)
     {
+        if (manager.searching) return false;
         int perftTestDepth;
         //uh I hate doing this
         try

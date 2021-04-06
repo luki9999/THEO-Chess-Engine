@@ -16,6 +16,7 @@ public class EvalCommand : ConsoleCommand
     //runs on command execution
     public override bool Action(string[] args)
     {
+        if (manager.searching) return false;
         if (args.Length != 0 && args[0] == "search")
         {
             console.Line(" ");

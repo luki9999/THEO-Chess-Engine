@@ -14,6 +14,7 @@ public class DisplayMovesCommand : ConsoleCommand
     }
     public override bool Action(string[] args)
     {
+        if (manager.searching) return false;
         if (!args[0].Equals("white",System.StringComparison.OrdinalIgnoreCase) && !args[0].Equals("black", System.StringComparison.OrdinalIgnoreCase))
         { // sorting out wrong inputs
             console.Print("Can't highlight possible moves for color " + args[0] + ", please use white or black.");

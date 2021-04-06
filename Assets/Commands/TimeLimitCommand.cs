@@ -16,7 +16,7 @@ public class TimeLimitCommand : ConsoleCommand
     //runs on command execution
     public override bool Action(string[] args)
     {
-        float newTimeLimit = 100f;
+        float newTimeLimit = 10f;
 
         if (args.Length > 0 && float.TryParse(args[0], out newTimeLimit)) manager.timeLimit = newTimeLimit;
         console.Print("Set search time limit to " + newTimeLimit.ToString() + " seconds. ");

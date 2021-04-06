@@ -16,9 +16,11 @@ public class StopCommand : ConsoleCommand
     //runs on command execution
     public override bool Action(string[] args)
     { // TODO test if engine in search
+        if (!manager.searching) return false;
         manager.engine.abortSearch = true;
         manager.engineState = EngineState.Off;
         console.Print("Aborted current search. Playing last found move.");
+        manager.ui.FlipPlayButton();
         return true;
     }
 }

@@ -8,6 +8,7 @@ TagManager:
   - Piece
   - Space
   - Console
+  - UIHelper
   layers:
   - Default
   - TransparentFX

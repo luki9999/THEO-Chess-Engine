@@ -16,6 +16,8 @@ public class UndoCommand : ConsoleCommand
     //runs on command execution
     public override bool Action(string[] args)
     {
+        if (manager.searching) return false;
+        manager.spaceHandler.UnHighlightAll();
         manager.UndoLastMove();
         console.Print("Last move was taken back.");
         return true;

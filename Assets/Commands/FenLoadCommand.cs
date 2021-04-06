@@ -13,6 +13,7 @@ public class FenLoadCommand : ConsoleCommand
     }
     public override bool Action(string[] args)
     {
+        if (manager.searching) return false;
         //do try catch or some other error handling here 
         string fen = string.Join(" ", args).Trim('"', ' ');
         console.Print("Loading FEN: " + fen);
