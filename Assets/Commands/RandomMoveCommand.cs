@@ -17,6 +17,7 @@ public class RandomMoveCommand : ConsoleCommand
     public override bool Action(string[] args)
     {
         if (manager.searching) return false;
+        if (manager.currentState != GameState.Running) return false;
         EngineState prevState = manager.engineState;
         manager.engineState = (manager.playerOnTurn == ChessBoard.white) ? EngineState.White : EngineState.Black;
         manager.engine.ThreadedMove();

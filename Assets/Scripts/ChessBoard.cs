@@ -407,6 +407,8 @@ public class ChessBoard
     //methods to make moving and undoing faster 
     public void CreatePiece(int position, int piece)
     {
+        if (piece == 0) return;
+        
         piecePositionBoards[BitBoardIndex(piece)][position] = true;
 
         fullSpaces[position] = true;
@@ -415,6 +417,8 @@ public class ChessBoard
 
     public void MovePieceToEmptySpace(int start, int end, int piece)
     {
+        if (piece == 0) return;
+
         piecePositionBoards[BitBoardIndex(piece)][start] = false;
         piecePositionBoards[BitBoardIndex(piece)][end] = true;
 
@@ -426,6 +430,14 @@ public class ChessBoard
 
     public void MovePieceToFullSpace(int start, int end, int piece, int takenPiece)
     {
+        if (piece == 0) return;
+
+        if (takenPiece == 0)
+        {
+            MovePieceToEmptySpace(start, end, piece);
+            return;
+        }
+
         piecePositionBoards[BitBoardIndex(takenPiece)][end] = false;
         piecePositionBoards[BitBoardIndex(piece)][start] = false;
         piecePositionBoards[BitBoardIndex(piece)][end] = true;

@@ -17,6 +17,7 @@ public class EvalCommand : ConsoleCommand
     public override bool Action(string[] args)
     {
         if (manager.searching) return false;
+        if (manager.currentState != GameState.Running) return false;
         if (args.Length != 0 && args[0] == "search")
         {
             console.Line(" ");
