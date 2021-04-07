@@ -143,6 +143,11 @@ public class PieceHandler : MonoBehaviour
     {
         float startTime = Time.time;
         GameObject pieceToMove = GetPieceAtPos(oldSpace);
+        if (pieceToMove == null)
+        {
+            ReloadPieces();
+            yield break;
+        }
         GameObject takenPiece = GetPieceAtPos(newSpace);
         if (takenPiece != null)
         {
@@ -156,8 +161,12 @@ public class PieceHandler : MonoBehaviour
             if (moveGenerator.board.Contains(newSpace, blackPiece | queen)) ChangePieceToQueen(newSpace, black);
         }
         while (Time.time - startTime <= animTime)
-        {
-            if (pieceToMove == null) break;
+        {        
+            if (pieceToMove == null) //a bit ugly, but should prevent weird bugs in very fast AI v AI games
+            {
+                ReloadPieces();
+                yield break;
+            }
             pieceToMove.transform.position = Vector3.Lerp(spaceHandler.ChessSpaceToWorldSpace(oldSpace), spaceHandler.ChessSpaceToWorldSpace(newSpace), (Time.time - startTime) / animTime);
             yield return 0;
         }
@@ -168,7 +177,6 @@ public class PieceHandler : MonoBehaviour
     {
         StartCoroutine(PieceAnimationCoroutine(oldSpace, newSpace, animTime));
     }
-
 
     //drag and drop functionality
     int SnapToSpace(GameObject piece, int startSpace, List<int> possibleSpaces)
@@ -231,10 +239,12 @@ public class PieceHandler : MonoBehaviour
                 int kingSpace = (manager.playerOnTurn == white) ? moveGenerator.whiteKingPosition : moveGenerator.blackKingPosition;
                 spaceHandler.HighlightSpace(kingSpace, Color.red, 0.5f);
             }
+            
             if (manager.lastMove.movedPiece != 0) {
                 spaceHandler.HighlightSpace(manager.lastMove.start, Color.yellow, 0.7f);
                 spaceHandler.HighlightSpace(manager.lastMove.end, Color.yellow, 0.7f);
             }
+
             selectedPiece.GetComponent<BoxCollider2D>().enabled = true;
             selectedPiece.GetComponent<SpriteRenderer>().sortingOrder = 0;
 

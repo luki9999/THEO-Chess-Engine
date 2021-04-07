@@ -42,9 +42,12 @@ public class ConsoleBehaviour : MonoBehaviour
     [SerializeField] private ConsoleCommand[] consoleCommands;
     [SerializeField] private InputField inputUI;
     [SerializeField] private Text outputUI;
+    [SerializeField] private ScrollRect scrollRect;
 
     ChessConsole console;
     string lastInput = "";
+    int lineCount = 0;
+    int lineLimit = 700; //prevents Execption from mesh having too many vertices
 
     void Start()
     {
@@ -68,6 +71,7 @@ public class ConsoleBehaviour : MonoBehaviour
             lastInput = input;
             inputUI.text = string.Empty;
         }
+        scrollRect.verticalNormalizedPosition = 0;
         if (Application.platform != RuntimePlatform.Android)
         {
             inputUI.ActivateInputField();
@@ -76,11 +80,30 @@ public class ConsoleBehaviour : MonoBehaviour
 
     public void Print(string line)
     {
+        lineCount += 2;
+        if (lineCount >= lineLimit)
+        {
+            Cutoff(2); //oldest two lines must go to prevent overflow
+        }
         outputUI.text += "\n" + line + "\n";
+        
     }
 
     public void Line(string line) {
+        lineCount++;
+        if (lineCount >= lineLimit)
+        {
+            Cutoff(1); //oldest line must go to prevent overflow
+        }
         outputUI.text += "\n" + line;
+    }
+
+    private void Cutoff(int lines) //cuts a certain number of lines from the top of the console
+    {
+        List<string> splitTxt = outputUI.text.Split('\n').ToList<string>();
+        splitTxt.RemoveRange(0, lines);
+        outputUI.text = string.Join("\n", splitTxt.ToArray<string>());
+        lineCount -= lines;
     }
 
     public void ReplaceLast(string line)

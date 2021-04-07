@@ -19,6 +19,11 @@ public class UndoCommand : ConsoleCommand
         if (manager.searching) return false;
         manager.spaceHandler.UnHighlightAll();
         manager.UndoLastMove();
+        if (manager.moveHistory.Count != 0)
+        {
+            manager.spaceHandler.HighlightSpace(manager.lastMove.start, Color.yellow, 0.7f);
+            manager.spaceHandler.HighlightSpace(manager.lastMove.end, Color.yellow, 0.7f);
+        }
         console.Print("Last move was taken back.");
         return true;
     }

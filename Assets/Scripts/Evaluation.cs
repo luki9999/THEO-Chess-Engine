@@ -1,7 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
 using static ChessBoard;
 
 public class Evaluation
@@ -97,7 +93,6 @@ public class Evaluation
             if (System.Math.Sign(eval) == 1)
             {
                 eval += EndgameKingCornerBonus(white);
-                //Debug.Log(player.ToString() + " is ahead and gets " + EndgameKingCornerBonus(player).ToString());
             }
             else if (System.Math.Sign(eval) == -1)
             {

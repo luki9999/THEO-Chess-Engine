@@ -19,8 +19,7 @@ public class StopCommand : ConsoleCommand
         if (!manager.searching) return false;
         manager.engine.abortSearch = true;
         manager.engineState = EngineState.Off;
-        console.Print("Aborted current search. Playing last found move.");
-        manager.ui.FlipPlayButton();
+        console.Print("Aborting current search and playing last found move.");
         return true;
     }
 }

@@ -14,38 +14,17 @@ public class UIHelper : MonoBehaviour
     public GameObject playButton;
     public GameObject stopButton;
 
-    public Image blackButton;
-    public Image whiteButton;
+    public UIEnginePlayerButton blackButton;
+    public UIEnginePlayerButton whiteButton;
 
     [SerializeField] GameMngr manager;
 
     Color prevColor;
-    private void Start()
-    {
-        prevColor = blackButton.color;
-    }
+    
     public void ReloadButtonColors()
     {
-        if (manager.engineState == EngineState.White)
-        {
-            whiteButton.color = manager.boardCreation.whiteColor;
-            blackButton.color = prevColor;
-        }
-        else if (manager.engineState == EngineState.Black)
-        {
-            blackButton.color = manager.boardCreation.blackColor;
-            whiteButton.color = prevColor;
-        }
-        else if (manager.engineState == EngineState.Both)
-        {
-            whiteButton.color = manager.boardCreation.whiteColor;
-            blackButton.color = manager.boardCreation.blackColor;
-        }
-        else
-        {
-            whiteButton.color = prevColor;
-            blackButton.color = prevColor;
-        }
+        whiteButton.IsActivated = (manager.engineState == EngineState.White || manager.engineState == EngineState.Both);
+        blackButton.IsActivated = (manager.engineState == EngineState.Black || manager.engineState == EngineState.Both);
     }
 
     public void FlipBoardNumbering()
@@ -59,7 +38,7 @@ public class UIHelper : MonoBehaviour
 
     public void FlipPlayButton()
     {
-        bool playPressed = playButton.activeSelf;
+        bool playPressed = playButton.activeInHierarchy;
         playButton.SetActive(!playPressed);
         stopButton.SetActive(playPressed);
     }

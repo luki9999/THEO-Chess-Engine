@@ -28,12 +28,16 @@ public class GameMngr : MonoBehaviour
     public SpaceHandler spaceHandler;
     public BoardCreation boardCreation;
     public ConsoleBehaviour console;
-    public UIHelper ui;
 
     //graphics + init
     public bool boardExists = false;
     public bool boardFlipped;
     public float moveAnimationTime;
+
+    //UI
+    public UIHelper ui;
+    public UIEnginePlayerButton whiteButton;
+    public UIEnginePlayerButton blackButton;
 
     //game flow
     public GameState currentState;
@@ -114,6 +118,8 @@ public class GameMngr : MonoBehaviour
         positionHistory = new List<ulong>() { moveGenerator.ZobristHash() };
         playerOnTurn = moveGenerator.gameData.playerOnTurn;
         engineState = EngineState.Off;
+        ui.ReloadButtonColors();
+
         movesWithoutPawn = 0;
         pieceHandler.LayOutPieces(moveGenerator.board);
         if (debugMode)
@@ -186,6 +192,10 @@ public class GameMngr : MonoBehaviour
         if (moveHistory.Count == 0) return;
         moveGenerator.UndoMovePiece(moveHistory.Last());
         moveHistory.RemoveAt(moveHistory.Count - 1);
+        if (moveHistory.Count != 0)
+        {    
+            lastMove = moveHistory.Last();
+        } 
         positionHistory.RemoveAt(positionHistory.Count - 1);
         pieceHandler.ReloadPieces();
 
@@ -293,6 +303,7 @@ public class GameMngr : MonoBehaviour
             deltaTime = 0;
             engine.currentSearch.searchStarted = false;
 
+            ui.FlipPlayButton();
             searching = true;
         }
 
@@ -313,22 +324,23 @@ public class GameMngr : MonoBehaviour
         }
         if (engine.moveReady)
         {
+            ui.FlipPlayButton();
+            searching = false;
             OnEngineMoveReady();
             engine.moveReady = false;
-            searching = false;
         }
         if (engine.evalReady)
         {
+            ui.FlipPlayButton();
+            searching = false;
             console.Print("Searched Eval: " + engine.currentSearch.currentBestEval.ToString());
             engine.evalReady = false;
-            searching = false;
         }
     }
 
     void OnEngineMoveReady()
     {
         MakeMoveAnimated(engine.nextFoundMove.Start, engine.nextFoundMove.End, true);
-        ui.FlipPlayButton();
         if (engineState == EngineState.Both)
         {
             engine.ThreadedMove();

@@ -20,7 +20,7 @@ public class DepthCommand : ConsoleCommand
         int depthValue;
         if (args.Length == 0)
         {
-            console.Print("Current engine depth: " + manager.engineDepth.ToString());
+            console.Print("Current engine depth limit: " + manager.engineDepth.ToString());
             return true;
         }
         else if (!int.TryParse(args[0], out depthValue))
@@ -28,14 +28,14 @@ public class DepthCommand : ConsoleCommand
             console.Print("Invalid arugment for depth command. Use an integer.");
             return false;
         }
-        else if (depthValue < 1 || depthValue > 100) //TODO make this not hardcoded, you donut
+        else if (depthValue < 1 || depthValue > 100)
         {
-            console.Print("Engine depth limit has to be between 1 and 100.\nChoose a different value.");
+            console.Print("Engine depth limit has to be between 2 and 100.\nChoose a different value.");
             return false;
         }
         manager.engineDepth = depthValue;
         manager.engine.originalDepth = depthValue;
-        console.Print("Engine depth was set to " + args[0] + ".");
+        console.Print("Engine depth limit was set to " + args[0] + ".");
         return true;
     }
 }

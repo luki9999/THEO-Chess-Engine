@@ -1,13 +1,10 @@
-using System.Collections;
 using System.Collections.Generic;
-using UnityEngine; //just for Debug.Log, remove eventually
 using System;
 
-[Serializable]
 public class BitBoard
 {
     //core
-    [SerializeField]ulong boardInt;
+    ulong boardInt;
 
     //init
     public BitBoard(ulong newBoardInt = 0)
@@ -114,43 +111,53 @@ public class BitBoard
     }
 }
 
-class ZobristHashing {
+class ZobristHashing
+{
     ulong[] keys = new ulong[781];
 
-    public ulong[] Keys {get => keys;}
+    public ulong[] Keys { get => keys; }
 
-    public ZobristHashing(ulong randomSeed) {
+    public ZobristHashing(ulong randomSeed)
+    {
         XORShiftRandom rng = new XORShiftRandom(randomSeed);
-        for (int i = 0; i < keys.Length; i++) {
+        for (int i = 0; i < keys.Length; i++)
+        {
             keys[i] = rng.Next();
         }
     }
 
-    ulong LookUpPiece(int space, int piece) { 
+    ulong LookUpPiece(int space, int piece)
+    {
         int index = (((piece & 0b111) - 1) + (6 * (piece >> 4))) * space; //piece type and piece color create an index from 0 to 11, which is then multiplied with space
         return keys[index];
     }
- 
-    ulong LookUpColor(int color) {
+
+    ulong LookUpColor(int color)
+    {
         return keys[768] * (ulong)color;
     }
 
-    ulong LookUpCastling(int castlingIndex) {
+    ulong LookUpCastling(int castlingIndex)
+    {
         return keys[769 + castlingIndex];
     }
 
-    ulong LookUpEP(int epSpace) {
+    ulong LookUpEP(int epSpace)
+    {
         if (epSpace == 0) return 0;
         return keys[773 + ChessBoard.SpaceY(epSpace)];
     }
 
-    public ulong Hash(ChessBoard input, int player, bool[] castling, int epSpace) {
+    public ulong Hash(ChessBoard input, int player, bool[] castling, int epSpace)
+    {
         ulong result = 0;
-        foreach (int space in input.fullSpaces.GetActive()) {
+        foreach (int space in input.fullSpaces.GetActive())
+        {
             result ^= LookUpPiece(space, input[space]);
-        } 
+        }
         result ^= LookUpColor(player);
-        for (int castlingIndex = 0; castlingIndex < 4; castlingIndex++) {
+        for (int castlingIndex = 0; castlingIndex < 4; castlingIndex++)
+        {
             if (castling[castlingIndex]) result ^= LookUpCastling(castlingIndex);
         }
         result ^= LookUpEP(epSpace);
@@ -158,7 +165,6 @@ class ZobristHashing {
     }
 }
 
-[Serializable]
 public class ChessBoard
 {
     //constants
@@ -183,10 +189,10 @@ public class ChessBoard
 
     //castling data 
     //short white, long white, short black, short white
-    public static readonly int[] rooksBefore = new int[] {7, 0, 63, 56};
-    public static readonly int[] kingsBefore = new int[] {4, 4, 60, 60};
-    public static readonly int[] rooksAfter = new int[] {5, 3, 61, 59};
-    public static readonly int[] kingsAfter = new int[] {6, 2, 62, 58};
+    public static readonly int[] rooksBefore = new int[] { 7, 0, 63, 56 };
+    public static readonly int[] kingsBefore = new int[] { 4, 4, 60, 60 };
+    public static readonly int[] rooksAfter = new int[] { 5, 3, 61, 59 };
+    public static readonly int[] kingsAfter = new int[] { 6, 2, 62, 58 };
 
 
 
@@ -229,10 +235,11 @@ public class ChessBoard
         }
         for (int i = 0; i < 6; i++)
         {
-            if(piecePositionBoards[i][position])
+            if (piecePositionBoards[i][position])
             {
                 return i + 1 + whitePiece;
-            } else if (piecePositionBoards[i + 6][position])
+            }
+            else if (piecePositionBoards[i + 6][position])
             {
                 return i + 1 + blackPiece;
             }
@@ -246,7 +253,7 @@ public class ChessBoard
         if (piece == prevPiece) return; //piece is already there
         if (prevPiece != 0) piecePositionBoards[BitBoardIndex(prevPiece)][position] = false;
         if (piece != 0) piecePositionBoards[BitBoardIndex(piece)][position] = true;
-        
+
         fullSpaces[position] = (piece != 0);
         colorMask[position] = (piece >> 4) == 1;
     }
@@ -268,10 +275,9 @@ public class ChessBoard
     //some static getters
     public static int PieceColor(int piece)
     {
-        //ok that was important
         if (piece == 0) return -1;
         return (piece >> 4);
-        //return ((piece & 0b11000) == whitePiece) ? white: black ;
+        //equal to: return ((piece & 0b11000) == whitePiece) ? white: black ;
     }
 
     public static int PieceType(int piece)
@@ -322,14 +328,14 @@ public class ChessBoard
 
     public static int SpaceNumberFromString(string spaceName)
     {
-        int x=0, y=0;
+        int x = 0, y = 0;
         for (int i = 0; i < 8; i++)
         {
-            if(fileLetters[i] == spaceName[0])
+            if (fileLetters[i] == spaceName[0])
             {
                 x = i;
-            } 
-            if(rankNumbers[i] == spaceName[1])
+            }
+            if (rankNumbers[i] == spaceName[1])
             {
                 y = i;
             }
@@ -386,13 +392,15 @@ public class ChessBoard
         return output;
     }
 
-    public BitBoard PieceSpacesOfColor(int color){
+    public BitBoard PieceSpacesOfColor(int color)
+    {
         if (color == black) return colorMask & fullSpaces;
         else if (color == white) return ~colorMask & fullSpaces;
         else throw new System.ArgumentException("Invalid value for argument color. Use 0 (white) or 1 (black)");
     }
 
-    public List<int> FindPiecesOfColor(int color) {
+    public List<int> FindPiecesOfColor(int color)
+    {
         return PieceSpacesOfColor(color).GetActive();
     }
 
@@ -400,7 +408,7 @@ public class ChessBoard
     public void CreatePiece(int position, int piece)
     {
         piecePositionBoards[BitBoardIndex(piece)][position] = true;
-        
+
         fullSpaces[position] = true;
         colorMask[position] = (piece >> 4) == 1;
     }
@@ -409,7 +417,7 @@ public class ChessBoard
     {
         piecePositionBoards[BitBoardIndex(piece)][start] = false;
         piecePositionBoards[BitBoardIndex(piece)][end] = true;
-        
+
         fullSpaces[start] = false;
         colorMask[start] = false;
         fullSpaces[end] = true;
@@ -420,8 +428,8 @@ public class ChessBoard
     {
         piecePositionBoards[BitBoardIndex(takenPiece)][end] = false;
         piecePositionBoards[BitBoardIndex(piece)][start] = false;
-        piecePositionBoards[BitBoardIndex(piece)][end] = true; 
-        
+        piecePositionBoards[BitBoardIndex(piece)][end] = true;
+
         fullSpaces[start] = false; // no need to update full spaces at end, there will still be a piece
         colorMask[start] = false;
         colorMask[end] = (piece >> 4) == 1;
@@ -435,13 +443,13 @@ public class ChessBoard
 
     public void TurnQueenToPawn(int pos, int color) //for undoing promotions
     {
-        piecePositionBoards[queen - 1 + (6 * color)][pos] = false; 
-        piecePositionBoards[6 * color][pos] = true; 
+        piecePositionBoards[queen - 1 + (6 * color)][pos] = false;
+        piecePositionBoards[6 * color][pos] = true;
     }
 
     public int TakeEPPawn(int pos, int color)
     {
-        piecePositionBoards[-6*(color-1)][(-8 + 16 * color) + pos] = false; // 6 for white (black pawn), 0 for black (white pawn) and -8 for white, 8 for black 
+        piecePositionBoards[-6 * (color - 1)][(-8 + 16 * color) + pos] = false; // 6 for white (black pawn), 0 for black (white pawn) and -8 for white, 8 for black 
         fullSpaces[(-8 + 16 * color) + pos] = false;
         colorMask[(-8 + 16 * color) + pos] = false;
         return (-8 + 16 * color) + pos;

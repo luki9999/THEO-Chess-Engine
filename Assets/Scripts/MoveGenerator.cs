@@ -1,9 +1,3 @@
-using System.Collections;
-using System.Collections.Specialized;
-using System.Collections.Generic;
-using UnityEngine;
-using System;
-
 using static ChessBoard;
 
 public struct ChessGameData
@@ -59,7 +53,7 @@ public class MoveGenerator
         {
             int x = SpaceX(i);
             int y = SpaceY(i);
-            var edgeData = new int[] { 7 - y, y, 7 - x, x, Mathf.Min(7 - y, 7 - x), Mathf.Min(7 - y, x), Mathf.Min(y, 7 - x), Mathf.Min(y, x) };
+            var edgeData = new int[] { 7 - y, y, 7 - x, x, System.Math.Min(7 - y, 7 - x), System.Math.Min(7 - y, x), System.Math.Min(y, 7 - x), System.Math.Min(y, x) };
             SpacesToEdge[i] = edgeData;
         }
     }
@@ -203,7 +197,7 @@ public class MoveGenerator
                     if (newSpace >= 0 && newSpace < 64)
                     {
                         newSpacePieceColor = PieceColor(board[newSpace]);
-                        deltaX = Mathf.Abs(SpaceX(newSpace) - SpaceX(space));
+                        deltaX = System.Math.Abs(SpaceX(newSpace) - SpaceX(space));
                         if (newSpacePieceColor != pieceColor && (deltaX == 1 || deltaX == 2))
                         {
                             output[newSpace] = ((newSpacePieceColor == -1) && (!capturesOnly)) || (newSpacePieceColor == (pieceColor ^ 1));
@@ -362,7 +356,6 @@ public class MoveGenerator
                 output[newSpace] = false;
             }
         }
-        //Debug.Log("There were " + output.Count.ToString() + " moves.");
         return output;
     }
 
@@ -465,7 +458,7 @@ public class MoveGenerator
         //leave that like this! dont put it in the if clause up there. IT WILL BREAK
 
         //setting the e.p space for the next move
-        if (!isCapture && Mathf.Abs(start / 8 - end / 8) == 2 && type == pawn)
+        if (!isCapture && System.Math.Abs(start / 8 - end / 8) == 2 && type == pawn)
         {
             gameData.epSpace = (color == black) ? end + 8 : end - 8;
         }
