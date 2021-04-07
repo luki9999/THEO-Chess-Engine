@@ -175,7 +175,7 @@ public class PieceHandler : MonoBehaviour
     {
         int space = spaceHandler.WorldSpaceToChessSpace(piece.transform.position);
         //resetting the piece in case of an invalid move
-        if (space < 0 || space > 63 || space == startSpace || !possibleSpaces.Contains(space))
+        if (space < 0 || space > 63 || space == startSpace || !possibleSpaces.Contains(space) || manager.searching)
         {
             piece.transform.position = spaceHandler.ChessSpaceToWorldSpace(startSpace);
             return startSpace;
@@ -194,31 +194,34 @@ public class PieceHandler : MonoBehaviour
 
     void DragDrop(bool respectTurn = false)
     {
-        if (Input.GetMouseButtonDown(0) && GetPieceAtCursor() != null)
+        if (manager.searching) return;
+        if (Input.GetMouseButtonDown(0))
         {
             selectedPiece = GetPieceAtCursor();
+            if (selectedPiece == null) return;
+
             startSpace = spaceHandler.WorldSpaceToChessSpace(selectedPiece.transform.position);
-            if (!respectTurn || manager.playerOnTurn == ChessBoard.PieceColor(moveGenerator.board[startSpace])){
-                selectedPiece.GetComponent<SpriteRenderer>().color = Color.Lerp(Color.white, highlightColor, 0.5f); 
-                possibleMovesForClickedPiece = moveGenerator.GetLegalMovesForPiece(startSpace).GetActive();
+            possibleMovesForClickedPiece = moveGenerator.GetLegalMovesForPiece(startSpace).GetActive();
+            
+            if (!respectTurn || manager.playerOnTurn == ChessBoard.PieceColor(moveGenerator.board[startSpace]))
+            {
+                //selectedPiece.GetComponent<SpriteRenderer>().color = Color.Lerp(Color.white, highlightColor, 0.5f);
+
                 spaceHandler.HighlightSpaceList(possibleMovesForClickedPiece, Color.cyan, 0.5f);
                 spaceHandler.HighlightSpace(startSpace, Color.green, 0.5f);
-                transformDelta = selectedPiece.transform.position - (Vector3) CursorPos();
+
+                transformDelta = selectedPiece.transform.position - (Vector3)CursorPos();
                 selectedPiece.GetComponent<BoxCollider2D>().enabled = false;
                 selectedPiece.GetComponent<SpriteRenderer>().sortingOrder = 1;
 
-                inDrag = true; }
-            //Oh god please no one else write shit like this this is an embarassment
-            else
-            {
-                selectedPiece = null;
+                inDrag = true;
             }
         }
-        else if (Input.GetMouseButton(0) && selectedPiece != null)
+        else if (Input.GetMouseButton(0) && selectedPiece != null && inDrag)
         {
             selectedPiece.transform.position = (Vector3) CursorPos() +  transformDelta;
         }
-        else if (Input.GetMouseButtonUp(0) && selectedPiece != null)
+        else if (Input.GetMouseButtonUp(0) && selectedPiece != null && inDrag)
         {
             endSpace = SnapToSpace(selectedPiece, startSpace, possibleMovesForClickedPiece);
             spaceHandler.UnHighlightAll(); // Doesnt need to be fast :D

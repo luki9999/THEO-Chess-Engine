@@ -3,14 +3,16 @@ using System.Collections.Generic;
 using UnityEngine;
 
 
-struct Entry {
+struct Entry
+{
     public readonly ulong key;
-	public readonly int value;
-	public readonly EngineMove move;
-	public readonly byte depth;
-	public readonly byte nodeType;
+    public readonly int value;
+    public readonly EngineMove move;
+    public readonly byte depth;
+    public readonly byte nodeType;
 
-    public Entry(ulong key, int value, EngineMove move, byte depth, byte nodeType) {
+    public Entry(ulong key, int value, EngineMove move, byte depth, byte nodeType)
+    {
         this.key = key;
         this.value = value;
         this.depth = depth;
@@ -21,55 +23,67 @@ struct Entry {
 
 public class TranspositionTable
 {
-    public const int exact = 0, upperBound = 2, lowerBound = 1, lookupFailed = int.MinValue; 
+    public const int exact = 0, upperBound = 2, lowerBound = 1, lookupFailed = int.MinValue;
     ulong size;
     Entry[] table;
     MoveGenerator moveGenerator;
 
-    public TranspositionTable(ulong size, MoveGenerator moveGenerator) {
+    public TranspositionTable(ulong size, MoveGenerator moveGenerator)
+    {
         table = new Entry[size];
         this.size = size;
         this.moveGenerator = moveGenerator;
     }
 
-    ulong Index(ulong zobristHash) {
+    ulong Index(ulong zobristHash)
+    {
         return zobristHash % size;
     }
 
-    public void StoreEval(int depth, int eval, int evalType, EngineMove bestMove) {
+    public void StoreEval(int depth, int eval, int evalType, EngineMove bestMove)
+    {
         ulong currentHash = moveGenerator.ZobristHash();
-        Entry newEntry = new Entry(currentHash, eval, bestMove, (byte) depth, (byte) evalType);
-        table[Index(currentHash)] = newEntry; 
+        Entry newEntry = new Entry(currentHash, eval, bestMove, (byte)depth, (byte)evalType);
+        table[Index(currentHash)] = newEntry;
     }
 
-    public int LookupEval(int depth, int alpha, int beta) {
+    public int LookupEval(int depth, int alpha, int beta)
+    {
         ulong currentHash = moveGenerator.ZobristHash();
         Entry entry = table[Index(currentHash)];
 
-        if (entry.key == currentHash) {
-            if (entry.depth >= depth) {
-                if (entry.nodeType == exact) {
-						return entry.value;
-					}
-				if (entry.nodeType == upperBound && entry.value <= alpha) {
-						return entry.value;
-					}
-				if (entry.nodeType == lowerBound && entry.value >= beta) {
-						return entry.value;
-					}
+        if (entry.key == currentHash)
+        {
+            if (entry.depth >= depth)
+            {
+                if (entry.nodeType == exact)
+                {
+                    return entry.value;
+                }
+                if (entry.nodeType == upperBound && entry.value <= alpha)
+                {
+                    return entry.value;
+                }
+                if (entry.nodeType == lowerBound && entry.value >= beta)
+                {
+                    return entry.value;
+                }
             }
         }
 
         return lookupFailed;
     }
 
-    public void Clear() {
-        for (uint i = 0; i < size; i++) {
+    public void Clear()
+    {
+        for (uint i = 0; i < size; i++)
+        {
             table[i] = new Entry();
         }
     }
 
-    public EngineMove LookUpMove() {
+    public EngineMove LookUpMove()
+    {
         ulong currentHash = moveGenerator.ZobristHash();
         Entry entry = table[Index(currentHash)];
         return entry.move;

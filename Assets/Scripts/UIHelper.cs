@@ -30,15 +30,18 @@ public class UIHelper : MonoBehaviour
         {
             whiteButton.color = manager.boardCreation.whiteColor;
             blackButton.color = prevColor;
-        } else if (manager.engineState == EngineState.Black)
+        }
+        else if (manager.engineState == EngineState.Black)
         {
             blackButton.color = manager.boardCreation.blackColor;
             whiteButton.color = prevColor;
-        } else if (manager.engineState == EngineState.Both)
+        }
+        else if (manager.engineState == EngineState.Both)
         {
             whiteButton.color = manager.boardCreation.whiteColor;
             blackButton.color = manager.boardCreation.blackColor;
-        } else
+        }
+        else
         {
             whiteButton.color = prevColor;
             blackButton.color = prevColor;

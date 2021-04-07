@@ -29,8 +29,8 @@ public class MoveGenerator
     public const int shortCastlingWhite = 0, longCastlingWhite = 1, shortCastlingBlack = 2, longCastlingBlack = 3;
     static readonly int[] slideDirections = new int[] { 8, -8, 1, -1, 9, 7, -7, -9 };
     //up, down, right, left, ur, ul, dr, dl
-    static readonly int[][] pawnDirs = new int[][] { new int[] { 8, 9, 7 }, new int[] { -8, -7, -9} };
-    static readonly int[][] knightDirs = new int[][] { new int[] { 15, 17 }, new int[] { -15, -17 },new int[] { -6, 10 },new int[] { 6, -10 } };
+    static readonly int[][] pawnDirs = new int[][] { new int[] { 8, 9, 7 }, new int[] { -8, -7, -9 } };
+    static readonly int[][] knightDirs = new int[][] { new int[] { 15, 17 }, new int[] { -15, -17 }, new int[] { -6, 10 }, new int[] { 6, -10 } };
     //up, down, right, left
     static int[][] SpacesToEdge;
 
@@ -40,7 +40,7 @@ public class MoveGenerator
     public int whiteKingPosition;
     public int blackKingPosition;
 
-     //hashing
+    //hashing
     ZobristHashing hashing;
 
     public MoveGenerator()
@@ -109,7 +109,7 @@ public class MoveGenerator
     private BitBoard GetSlideSpaces(int space, int pieceType, int range = 8, bool capturesOnly = false)
     {
         int pieceOnNewSpaceColor, newSpace;
-        int movingPieceColor = PieceColor(board[space]); 
+        int movingPieceColor = PieceColor(board[space]);
         int dirStart = (pieceType == bishop) ? 4 : 0;
         int dirEnd = (pieceType == rook) ? 4 : 8;
         BitBoard output = new BitBoard(0);
@@ -119,18 +119,19 @@ public class MoveGenerator
             {
                 newSpace = space + slideDirections[dirIndex] * (i + 1);
                 pieceOnNewSpaceColor = PieceColor(board[newSpace]);
-                if (pieceOnNewSpaceColor == movingPieceColor || (i+1) > range)
+                if (pieceOnNewSpaceColor == movingPieceColor || (i + 1) > range)
                 {
                     break;
-                } else
-                { 
-                    output[newSpace] = true && !capturesOnly; 
+                }
+                else
+                {
+                    output[newSpace] = true && !capturesOnly;
                     if (pieceOnNewSpaceColor != -1)
                     {
                         output[newSpace] = true;
                         break;
                     }
-                } 
+                }
             }
         }
         return output;
@@ -143,7 +144,7 @@ public class MoveGenerator
         int pieceColor = PieceColor(board[space]);
         newSpace = space + pawnDirs[pieceColor][0];
         newSpacePieceColor = PieceColor(board[newSpace]);
-        if(newSpacePieceColor == -1 && !capturesOnly)
+        if (newSpacePieceColor == -1 && !capturesOnly)
         {
             output[newSpace] = true;
             doublePushRow = (pieceColor == white) ? 1 : 6;
@@ -159,7 +160,7 @@ public class MoveGenerator
         }
         foreach (int possibleCapture in GetSpacesAttackedByPawn(space).GetActive())
         {
-            if(PieceColor((board[possibleCapture])) == (pieceColor ^ 0b1) || possibleCapture == gameData.epSpace)
+            if (PieceColor((board[possibleCapture])) == (pieceColor ^ 0b1) || possibleCapture == gameData.epSpace)
             {
                 output[possibleCapture] = true;
             }
@@ -298,7 +299,7 @@ public class MoveGenerator
     {
         return (player == white) ? whiteKingPosition : blackKingPosition;
     }
-    
+
     public bool IsPlayerInCheck(int player)
     {
         var bitboardToCheck = (player == white) ? isSpaceAttackedByBlack : isSpaceAttackedByWhite;
@@ -403,7 +404,7 @@ public class MoveGenerator
 
         //castling + castling prevention when king moved
         if (type == king)
-        { 
+        {
             int deltaX = end - start;
             if (!isCapture && (deltaX == 2 || deltaX == -2)) //keeps castling code from running all the time, castling is never a capture
             {
@@ -426,7 +427,7 @@ public class MoveGenerator
 
         //castling prevention after rook moved
         else if (type == rook)
-        { 
+        {
             if (SpaceX(start) == 7 && gameData.castling[shortCastlingIndex])
             {
                 gameData.castling[shortCastlingIndex] = false;
@@ -439,7 +440,7 @@ public class MoveGenerator
 
         //taking the pawn in case of e.p.
         else if (type == pawn)
-        { 
+        {
             if (end == gameData.epSpace && gameData.epSpace != 0)
             {
                 int spaceToTake = board.TakeEPPawn(end, color);
@@ -449,7 +450,7 @@ public class MoveGenerator
         //prventing castling when rook needed for it was taken
         if (isCapture && (end == 7 || end == 0 || end == 63 || end == 56))
         {
-            if (board.Contains(end, whitePiece | rook)) 
+            if (board.Contains(end, whitePiece | rook))
             {
                 gameData.castling[shortCastlingIndex] = (!(end == 7)) && gameData.castling[shortCastlingIndex];
                 gameData.castling[longCastlingIndex] = (!(end == 0)) && gameData.castling[longCastlingIndex];
@@ -462,7 +463,7 @@ public class MoveGenerator
         }
 
         //leave that like this! dont put it in the if clause up there. IT WILL BREAK
-        
+
         //setting the e.p space for the next move
         if (!isCapture && Mathf.Abs(start / 8 - end / 8) == 2 && type == pawn)
         {
@@ -474,7 +475,7 @@ public class MoveGenerator
         }
 
         // making the actual move
-        if (!isCapture) 
+        if (!isCapture)
         {
             board.MovePieceToEmptySpace(start, end, piece);
         }
@@ -497,23 +498,28 @@ public class MoveGenerator
         return undoData;
     }
 
-    public void UndoMovePiece(UndoMoveData undoData){
+    public void UndoMovePiece(UndoMoveData undoData)
+    {
         board.MovePieceToEmptySpace(undoData.end, undoData.start, undoData.movedPiece);
         gameData.castling = undoData.castlingBefore;
         gameData.epSpace = undoData.epSpaceBefore;
-        if(undoData.takenPiece != 0){
+        if (undoData.takenPiece != 0)
+        {
             board.CreatePiece(undoData.end, undoData.takenPiece);
         }
-        if (undoData.wasPromotion){
+        if (undoData.wasPromotion)
+        {
             board.TurnQueenToPawn(undoData.start, PieceColor(undoData.movedPiece));
         }
-        if(undoData.end == undoData.epSpaceBefore && undoData.end != 0){ // move was en passant
+        if (undoData.end == undoData.epSpaceBefore && undoData.end != 0)
+        { // move was en passant
             int pawnColor = (PieceColor(undoData.movedPiece) == white) ? blackPiece : whitePiece;
             int epOffset = (pawnColor == blackPiece) ? -8 : 8;
-            board.CreatePiece(undoData.end + epOffset, pawn|pawnColor);
+            board.CreatePiece(undoData.end + epOffset, pawn | pawnColor);
             return; // ep cant be castling
         }
-        if(undoData.castlingIndex != -1){ // move was castling
+        if (undoData.castlingIndex != -1)
+        { // move was castling
             int rookColor = (PieceColor(undoData.movedPiece) == white) ? whitePiece : blackPiece;
             board.MovePieceToEmptySpace(rooksAfter[undoData.castlingIndex], rooksBefore[undoData.castlingIndex], rook | rookColor);
         }
@@ -523,7 +529,8 @@ public class MoveGenerator
     }
 
     //Hashing for TranspoTable
-    public ulong ZobristHash() {
+    public ulong ZobristHash()
+    {
         return hashing.Hash(board, gameData.playerOnTurn, gameData.castling, gameData.epSpace);
     }
 }

@@ -47,7 +47,7 @@ public class SpaceHandler : MonoBehaviour
     public void HighlightSpace(int space, Color color, float lerpValue = 1)
     {
         GameObject spaceToHighlight = GetSpaceObjectAtPosition(space);
-        spaceToHighlight.GetComponent<SpriteRenderer>().color = Color.Lerp(spaceToHighlight.GetComponent<SpriteRenderer>().color, color, lerpValue); 
+        spaceToHighlight.GetComponent<SpriteRenderer>().color = Color.Lerp(spaceToHighlight.GetComponent<SpriteRenderer>().color, color, lerpValue);
     }
 
     public void UnHighlightSpace(int space)

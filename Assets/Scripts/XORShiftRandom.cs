@@ -7,16 +7,18 @@ public class XORShiftRandom
     ulong seed;
     ulong state;
 
-    public XORShiftRandom(ulong seed) {
+    public XORShiftRandom(ulong seed)
+    {
         this.seed = seed;
         state = seed;
     }
 
-    public ulong Next() {
+    public ulong Next()
+    {
         ulong x = state;
         x ^= x << 13;
-	    x ^= x >> 7;
-	    x ^= x << 17;
+        x ^= x >> 7;
+        x ^= x << 17;
         x ^= x << 12;
         x ^= x >> 15;
         state = x;

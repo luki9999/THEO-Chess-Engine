@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using static ChessBoard;
 
-public class SpeedTest {
-    
+public class SpeedTest
+{
+
     static float TimeFunction(System.Action method, int iterations)
     {
         float start = Time.realtimeSinceStartup;

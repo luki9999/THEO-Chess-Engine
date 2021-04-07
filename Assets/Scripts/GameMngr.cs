@@ -12,7 +12,8 @@ public enum GameState
     Draw
 }
 
-public enum EngineState{
+public enum EngineState
+{
     Off,
     White,
     Black,
@@ -57,7 +58,7 @@ public class GameMngr : MonoBehaviour
     public float deltaTime;
     public float timeLimit;
     public bool searching;
-    
+
     //history
     [HideInInspector] public List<UndoMoveData> moveHistory;
     [SerializeField] public List<ulong> positionHistory;
@@ -115,7 +116,8 @@ public class GameMngr : MonoBehaviour
         engineState = EngineState.Off;
         movesWithoutPawn = 0;
         pieceHandler.LayOutPieces(moveGenerator.board);
-        if (debugMode) {
+        if (debugMode)
+        {
             DebugOverlay();
         }
     }
@@ -128,17 +130,19 @@ public class GameMngr : MonoBehaviour
     // move making (sync between board and graphics)
     public void MakeMoveNoGraphics(int start, int end, bool engineMove)
     {
-        if (gameOver) return;
+        if (gameOver || searching) return;
         engine.transpositionTable.Clear();
-        if(!engineMove){ //engine prints somewhere else        
-            if(playerOnTurn == white) console.Line("W: " + moveGenerator.MoveName(start, end));
-            if(playerOnTurn == black) console.Line("B: " + moveGenerator.MoveName(start, end));
+        if (!engineMove)
+        { //engine prints in Update(), cant predict when it would be done
+            if (playerOnTurn == white) console.Line("W: " + moveGenerator.MoveName(start, end));
+            if (playerOnTurn == black) console.Line("B: " + moveGenerator.MoveName(start, end));
         }
         lastMove = moveGenerator.MovePiece(start, end);
         if (lastMove.castlingIndex != -1) // Castling!
         {
             pieceHandler.MovePieceSprite(rooksBefore[lastMove.castlingIndex], rooksAfter[lastMove.castlingIndex]);
-        } else if (lastMove.end == lastMove.epSpaceBefore) // en passant
+        }
+        else if (lastMove.end == lastMove.epSpaceBefore) // en passant
         {
             int epOffset = (PieceColor(lastMove.movedPiece) == white) ? -8 : 8;
             pieceHandler.DisablePiece(lastMove.end + epOffset);
@@ -149,7 +153,7 @@ public class GameMngr : MonoBehaviour
 
     public void MakeMove(int start, int end, bool engineMove)
     {
-        if (gameOver) return;
+        if (gameOver || searching) return;
         if (pieceHandler.GetPieceAtPos(end) != null)
         {
             pieceHandler.DisablePiece(end);
@@ -160,7 +164,7 @@ public class GameMngr : MonoBehaviour
 
     public void MakeMoveAnimated(int start, int end, bool engineMove)
     {
-        if (gameOver) return;
+        if (gameOver || searching) return;
         if (pieceHandler.GetPieceAtPos(end) != null)
         {
             pieceHandler.DisablePiece(end);
@@ -185,9 +189,12 @@ public class GameMngr : MonoBehaviour
         positionHistory.RemoveAt(positionHistory.Count - 1);
         pieceHandler.ReloadPieces();
 
-        if (debugMode) {
+        if (debugMode)
+        {
             DebugOverlay();
         }
+        gameOver = false;
+        currentState = GameState.Running;
 
         playerOnTurn = (playerOnTurn == white) ? black : white;
     }
@@ -203,10 +210,10 @@ public class GameMngr : MonoBehaviour
     //event handling (what happens after moves)
     public GameState CurrentState()
     {
-        if(positionHistory.Count(x => x == moveGenerator.ZobristHash()) == 3) return GameState.Draw; //draw after 3 fold repetion
-        if(movesWithoutPawn == 50) return GameState.Draw; //draw after 50 moves without pawn move
+        if (positionHistory.Count(x => x == moveGenerator.ZobristHash()) == 3) return GameState.Draw; //draw after 3 fold repetion
+        if (movesWithoutPawn == 50) return GameState.Draw; //draw after 50 moves without pawn move
         List<EngineMove> moveset = engine.GetMoveset(playerOnTurn);
-        if(moveset.Count == 0)
+        if (moveset.Count == 0)
         {
             if (moveGenerator.IsPlayerInCheck(playerOnTurn)) return GameState.Mate;
             else return GameState.Draw;
@@ -216,9 +223,11 @@ public class GameMngr : MonoBehaviour
 
     void OnMove()
     {
+        if (searching) return;
         currentState = CurrentState();
         spaceHandler.UnHighlightAll();
-        if(moveGenerator.IsPlayerInCheck(playerOnTurn)) { 
+        if (moveGenerator.IsPlayerInCheck(playerOnTurn))
+        {
             int kingSpace = (playerOnTurn == white) ? moveGenerator.whiteKingPosition : moveGenerator.blackKingPosition;
             spaceHandler.HighlightSpace(kingSpace, Color.red, 0.5f);
         }
@@ -226,17 +235,21 @@ public class GameMngr : MonoBehaviour
         spaceHandler.HighlightSpace(lastMove.start, Color.yellow, 0.7f);
         spaceHandler.HighlightSpace(lastMove.end, Color.yellow, 0.7f);
 
-        if (debugMode) {
+        if (debugMode)
+        {
             DebugOverlay();
         }
-        
+
         positionHistory.Add(moveGenerator.ZobristHash());
-        if (PieceType(lastMove.movedPiece) == pawn){
+        if (PieceType(lastMove.movedPiece) == pawn)
+        {
             movesWithoutPawn = 0;
-        } else{
-            movesWithoutPawn ++;
         }
-        if(currentState == GameState.Mate || currentState == GameState.Draw)
+        else
+        {
+            movesWithoutPawn++;
+        }
+        if (currentState == GameState.Mate || currentState == GameState.Draw)
         {
             gameEnd.Invoke();
             gameOver = true;
@@ -245,7 +258,8 @@ public class GameMngr : MonoBehaviour
         if (engineState == EngineState.Black && playerOnTurn == black)
         {
             engine.ThreadedMove();
-        } else if (engineState == EngineState.White && playerOnTurn == white)
+        }
+        else if (engineState == EngineState.White && playerOnTurn == white)
         {
             engine.ThreadedMove();
         }
@@ -271,8 +285,9 @@ public class GameMngr : MonoBehaviour
     {
         currentTime = Time.realtimeSinceStartup;
         deltaTime = currentTime - lastSearchStartTime;
-        
-        if(engine.currentSearch.searchStarted){
+
+        if (engine.currentSearch.searchStarted)
+        {
             console.Line(" ");
             lastSearchStartTime = currentTime;
             deltaTime = 0;
@@ -281,7 +296,8 @@ public class GameMngr : MonoBehaviour
             searching = true;
         }
 
-        if (deltaTime > timeLimit & searching){
+        if (deltaTime > timeLimit & searching)
+        {
             engine.abortSearch = true;
             searching = false;
         }
@@ -290,7 +306,7 @@ public class GameMngr : MonoBehaviour
         {
             string playerStr = (playerOnTurn == white) ? "W: " : "B: ";
             console.ReplaceLast(playerStr + engine.currentSearch.currentBestMoveName.PadRight(6)
-                + " | Static: " + engine.currentSearch.currentBestEval.ToString("N0").PadLeft(7) 
+                + " | Static: " + engine.currentSearch.currentBestEval.ToString("N0").PadLeft(7)
                 + " | Depth: " + engine.currentSearch.currentDepth.ToString("N0").PadLeft(3)
                 + " | Count: " + engine.currentSearch.currentSearchCount.ToString("N0").PadLeft(12));
             engine.currentSearch.valuesChanged = false;
@@ -313,16 +329,18 @@ public class GameMngr : MonoBehaviour
     {
         MakeMoveAnimated(engine.nextFoundMove.Start, engine.nextFoundMove.End, true);
         ui.FlipPlayButton();
-        if(engineState == EngineState.Both){
+        if (engineState == EngineState.Both)
+        {
             engine.ThreadedMove();
         }
     }
 
     //tests and stuff
-    public void DebugOverlay() {
+    public void DebugOverlay()
+    {
         spaceHandler.UnHighlightAll();
         spaceHandler.HighlightSpaceList(moveGenerator.board.FindPiecesOfColor(white), Color.red, 0.8f);
-        spaceHandler.HighlightSpaceList(moveGenerator.board.FindPiecesOfColor(black), Color.green, 0.8f); 
+        spaceHandler.HighlightSpaceList(moveGenerator.board.FindPiecesOfColor(black), Color.green, 0.8f);
         spaceHandler.HighlightSpaceList((~moveGenerator.board.fullSpaces).GetActive(), Color.gray, 0.8f);
     }
 
@@ -352,15 +370,15 @@ public class GameMngr : MonoBehaviour
         if (piece != 1)
         {
             spaceHandler.UnHighlightAll();
-            List<int> possibleMoves = moveGenerator.GetPossibleSpacesForPiece(3+ 3*8).GetActive();
+            List<int> possibleMoves = moveGenerator.GetPossibleSpacesForPiece(3 + 3 * 8).GetActive();
             spaceHandler.HighlightSpaceList(possibleMoves, Color.cyan, 0.5f);
             spaceHandler.HighlightSpace(27, Color.green, 0.5f);
         }
         else
         {
             spaceHandler.UnHighlightAll();
-            List<int> possibleMoves1 = moveGenerator.GetPossibleSpacesForPiece(3+ 1*8).GetActive();
-            List<int> possibleMoves2 = moveGenerator.GetPossibleSpacesForPiece(6+ 5*8).GetActive();
+            List<int> possibleMoves1 = moveGenerator.GetPossibleSpacesForPiece(3 + 1 * 8).GetActive();
+            List<int> possibleMoves2 = moveGenerator.GetPossibleSpacesForPiece(6 + 5 * 8).GetActive();
             spaceHandler.HighlightSpaceList(possibleMoves1, Color.cyan, 0.5f);
             spaceHandler.HighlightSpaceList(possibleMoves2, Color.magenta, 0.5f);
             spaceHandler.HighlightSpace(11, Color.green, 0.5f);
