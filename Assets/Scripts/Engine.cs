@@ -3,6 +3,8 @@ using UnityEngine;
 using System.Threading;
 using System.Linq;
 
+using static ChessBoard;
+
 public struct EngineMove
 {
     public int Piece;
@@ -191,6 +193,7 @@ public class Engine
             UndoMoveData madeMove = moveGenerator.MovePiece(move.Start, move.End);
             int eval = -Search(player ^ 1, depth - 1, -beta, -alpha, captureDepth);
             if (manager.positionHistory.Count(x => x == moveGenerator.ZobristHash()) >= 2) return 0; //draw after 3 fold repetion
+
             moveGenerator.UndoMovePiece(madeMove);
 
             if (eval >= beta)//prune the branch if move would be too good

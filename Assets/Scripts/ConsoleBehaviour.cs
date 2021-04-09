@@ -14,7 +14,8 @@ public class ChessConsole
 
     public void ParseCommandLine(string commandLine)
     {
-        string[] inputList = commandLine.Split(' ');
+        if (commandLine == string.Empty) return;
+        string[] inputList = commandLine.Trim().Split(' ');
         string commandToRun = inputList[0];
         string[] args = inputList.Skip(1).ToArray();
         ProcessCommand(commandToRun, args);
@@ -22,6 +23,7 @@ public class ChessConsole
 
     public void ProcessCommand(string calledCommand, string[] args) //actually runs commands
     {
+        if (calledCommand == string.Empty) return;
         foreach (var command in chessCommands)
         {
             if(!command.CommandString.Equals(calledCommand, System.StringComparison.OrdinalIgnoreCase)) //not a command
@@ -49,9 +51,10 @@ public class ConsoleBehaviour : MonoBehaviour
     int lineCount = 0;
     int lineLimit = 700; //prevents Execption from mesh having too many vertices
 
-    void Start()
+
+    private void Start()
     {
-        inputUI.onEndEdit.AddListener(RunCommand);
+        //inputUI.onEndEdit.AddListener(RunCommand);
         console = new ChessConsole(consoleCommands);
         foreach (ConsoleCommand command in consoleCommands)
         {
@@ -59,18 +62,27 @@ public class ConsoleBehaviour : MonoBehaviour
         }
     }
 
+    private void Update() {
+        if (Input.GetKeyDown(KeyCode.Return)) 
+        {
+            string[] commandsToRun = inputUI.text.Split(';');
+            foreach (string command in commandsToRun)
+            {
+                RunCommand(command);
+            }
+        }
+        if (Input.GetKeyDown(KeyCode.DownArrow))
+        {
+            inputUI.text = lastInput; //for easy repeated inputs
+        }
+    }
+
     public void RunCommand(string input)
     {
-        if (input == "#") //character to pull down last line
-        {
-            inputUI.text = lastInput;
-        } else if (input != "")
-        {
-            outputUI.text += "\n> " + input;
-            console.ParseCommandLine(input);
-            lastInput = input;
-            inputUI.text = string.Empty;
-        }
+        outputUI.text += "\n> " + input;
+        console.ParseCommandLine(input);
+        lastInput = input;
+        inputUI.text = string.Empty;
         scrollRect.verticalNormalizedPosition = 0;
         if (Application.platform != RuntimePlatform.Android)
         {

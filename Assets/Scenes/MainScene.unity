@@ -798,8 +798,6 @@ MonoBehaviour:
   boardFlipped: 0
   moveAnimationTime: 0.3
   ui: {fileID: 1945956216}
-  whiteButton: {fileID: 0}
-  blackButton: {fileID: 0}
   currentState: 0
   playerOnTurn: 1
   dragAndDropRespectsTurns: 1
@@ -2067,7 +2065,7 @@ MonoBehaviour:
     m_Alignment: 6
     m_AlignByGeometry: 0
     m_RichText: 1
-    m_HorizontalOverflow: 0
+    m_HorizontalOverflow: 1
     m_VerticalOverflow: 1
     m_LineSpacing: 1
   m_Text: 

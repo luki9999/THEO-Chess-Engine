@@ -36,8 +36,6 @@ public class GameMngr : MonoBehaviour
 
     //UI
     public UIHelper ui;
-    public UIEnginePlayerButton whiteButton;
-    public UIEnginePlayerButton blackButton;
 
     //game flow
     public GameState currentState;
@@ -88,7 +86,6 @@ public class GameMngr : MonoBehaviour
     void Awake()
     {
         moveGenerator = new MoveGenerator();
-        ChessBoard test = new ChessBoard();
         moveMade.AddListener(OnMove);
         gameEnd.AddListener(OnGameOver);
     }
@@ -104,8 +101,8 @@ public class GameMngr : MonoBehaviour
     public void OnBoardFinished()
     {
         boardExists = true;
-        StartChessGame();
         engine = new Engine(moveGenerator);
+        StartChessGame();
     }
 
     public void LoadPosition(string fen)
@@ -122,6 +119,8 @@ public class GameMngr : MonoBehaviour
 
         movesWithoutPawn = 0;
         pieceHandler.LayOutPieces(moveGenerator.board);
+
+        currentState = CurrentState();
         if (debugMode)
         {
             DebugOverlay();
@@ -222,6 +221,16 @@ public class GameMngr : MonoBehaviour
     {
         if (positionHistory.Count(x => x == moveGenerator.ZobristHash()) == 3) return GameState.Draw; //draw after 3 fold repetion
         if (movesWithoutPawn == 50) return GameState.Draw; //draw after 50 moves without pawn move
+        
+        int materialSum = engine.Evaluation.MaterialSum();
+        int materialValue = engine.Evaluation.MaterialValue();
+
+        int numPawns = moveGenerator.board.PieceCount(whitePiece | pawn) + moveGenerator.board.PieceCount(blackPiece | pawn);
+        int numRooks = moveGenerator.board.PieceCount(whitePiece | rook) + moveGenerator.board.PieceCount(blackPiece | rook);
+
+        if (materialSum <= 300 && numPawns == 0) return GameState.Draw; //draw when only kings or one piece left
+        if (materialSum <= 600 && numPawns == 0 &&  numRooks == 0 && materialSum != System.Math.Abs(materialValue)) return GameState.Draw; //draw when only knights or bishops left
+        
         List<EngineMove> moveset = engine.GetMoveset(playerOnTurn);
         if (moveset.Count == 0)
         {

@@ -19,7 +19,7 @@ public class Evaluation
     }
 
     //static eval and prerequisites
-    int MaterialValue()
+    public int MaterialValue()
     {
         int output = 0;
         for (int i = 0; i < 64; i++)
@@ -32,7 +32,7 @@ public class Evaluation
         return output;
     }
 
-    int MaterialSum()
+    public int MaterialSum()
     {
         int output = 0;
         for (int i = 0; i < 64; i++)
